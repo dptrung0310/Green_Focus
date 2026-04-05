@@ -43,11 +43,12 @@ android {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:34.11.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation("com.google.firebase:firebase-auth-ktx")     // Đăng nhập
-    implementation("com.google.firebase:firebase-firestore-ktx") // Database chính
-    implementation("com.google.firebase:firebase-database-ktx")  // Realtime cho Group
-    implementation("com.google.firebase:firebase-storage-ktx")   // Lưu ảnh/3D
-
+    implementation("com.google.firebase:firebase-auth")       // Đăng nhập
+    implementation("com.google.firebase:firebase-firestore")  // Database chính
+    implementation("com.google.firebase:firebase-database")   // Realtime cho Group
+    implementation("com.google.firebase:firebase-storage")    // Lưu ảnh/3D
+    implementation("androidx.navigation:navigation-compose:2.8.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

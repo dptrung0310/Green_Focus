@@ -1,8 +1,9 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
 data class PomodoroUiState (
-    val currentTimer: Int = 25 * 60,
-    val currentPercentage: Int = 0,
+    val isTimerRunning: Boolean = false,
+    val formattedTime: String = "25:00",
+    val currentPercentage: Float = 0.0f,
     val currentTreeId: String = "",
     val showTimeDialog: Boolean = false,
     val isDeepFocusEnabled: Boolean = false

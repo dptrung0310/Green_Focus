@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
+import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 
 @Composable
 fun SetupNavGraph(navController: NavHostController) {
@@ -28,7 +29,7 @@ fun SetupNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Home.route) {
-            // HomeScreen()
+            PomodoroScreen()
         }
 
         // ... Tương tự cho Shop, Forest

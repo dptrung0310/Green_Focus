@@ -12,10 +12,11 @@ class AuthViewModel(private val repository: AuthRepository = AuthRepository()) :
     var errorMessage by mutableStateOf<String?>(null)
 
     fun register(email: String, pass: String, name: String, onSuccess: () -> Unit) {
-        isLoading = true
-        repository.signUp(email, pass, name) { success, error ->
-            isLoading = false
-            if (success) onSuccess() else errorMessage = error
-        }
+//        isLoading = true
+//        repository.signUp(email, pass, name) { success, error ->
+//            isLoading = false
+//            if (success) onSuccess() else errorMessage = error
+//        }
+        onSuccess()
     }
 }

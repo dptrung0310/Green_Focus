@@ -21,4 +21,15 @@ class AuthRepository {
             }
             .addOnFailureListener { e -> onResult(false, e.message) }
     }
+
+    fun login(email: String, pass: String, onResult: (Boolean, String?) -> Unit) {
+        auth.signInWithEmailAndPassword(email, pass)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(true, null)
+                } else {
+                    onResult(false, task.exception?.message)
+                }
+            }
+    }
 }

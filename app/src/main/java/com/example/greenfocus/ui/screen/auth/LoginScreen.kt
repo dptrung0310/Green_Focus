@@ -1,4 +1,4 @@
-// ui/screen/auth/RegisterScreen.kt
+// ui/screen/auth/LoginScreen.kt
 package com.example.greenfocus.ui.screen.auth
 
 import androidx.compose.foundation.Image
@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,12 +23,11 @@ import com.example.greenfocus.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegisterScreen(
+fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
     onNavigateToHome: () -> Unit,
-    onNavigateToLogin: () -> Unit
+    onNavigateToRegister: () -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -43,14 +41,14 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(64.dp))
 
         Text(
-            text = "Tạo tài khoản mới",
+            text = "Chào mừng trở lại!",
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold,
                 color = TextDark
             )
         )
         Text(
-            text = "Cùng nhau xây dựng khu rừng xanh",
+            text = "Đăng nhập để tiếp tục trồng cây",
             color = Color.Gray,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -66,11 +64,11 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(28.dp))
 
         OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Tên hiển thị của bạn") },
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email của bạn") },
             singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryGreen) },
+            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = PrimaryGreen) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
@@ -83,26 +81,9 @@ fun RegisterScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = PrimaryGreen) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryGreen,
-                focusedLabelColor = PrimaryGreen,
-                cursorColor = PrimaryGreen
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Mật khẩu (ít nhất 6 ký tự)") },
+            label = { Text("Mật khẩu") },
             singleLine = true,
             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = PrimaryGreen) },
             visualTransformation = PasswordVisualTransformation(),
@@ -115,33 +96,40 @@ fun RegisterScreen(
             )
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        TextButton(
+            onClick = { /* Xử lý quên mật khẩu */ },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Quên mật khẩu?", color = Color.Gray)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         if (viewModel.isLoading) {
             CircularProgressIndicator(color = PrimaryGreen)
         } else {
             Button(
-                onClick = { viewModel.register(email, password, name) { onNavigateToHome() } },
+                onClick = { viewModel.login(email, password) { onNavigateToHome() } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Đăng Ký", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("Đăng Nhập", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextButton(onClick = onNavigateToLogin) {
-                Text("Đã có tài khoản? ", color = Color.Gray)
-                Text("Đăng nhập", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onNavigateToRegister) {
+                Text("Chưa có tài khoản? ", color = Color.Gray)
+                Text("Đăng ký ngay", color = PrimaryGreen, fontWeight = FontWeight.Bold)
             }
         }
 
         viewModel.errorMessage?.let {
             Spacer(modifier = Modifier.height(16.dp))
-            Text(it, color = Color.Red, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+            Text("Tài khoản hoặc mật khẩu không chính xác!", color = Color.Red, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
         }
     }
 }

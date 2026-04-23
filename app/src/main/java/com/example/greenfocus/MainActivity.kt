@@ -1,6 +1,7 @@
 package com.example.greenfocus
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -13,6 +14,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.greenfocus.ui.theme.GreenFocusTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
+import com.example.greenfocus.ui.screens.store.StoreScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -21,19 +23,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GreenFocusTheme {
-                Scaffold(modifier = Modifier.fillMaxSize())
-                { innerPadding ->
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding)
-                    ) {
-                        Greeting("User")
+                StoreScreen(
+                    onNavigate = { route ->
+                        toast("Đang chuyển sang trang: $route")
                     }
-                }
+                )
             }
         }
+    }
+
+    private fun toast(msg: String) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
     }
 }
 

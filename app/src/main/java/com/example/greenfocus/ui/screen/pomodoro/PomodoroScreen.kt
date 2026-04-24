@@ -1,19 +1,31 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.theme.GreenFocusTheme
 import com.example.greenfocus.R
@@ -76,7 +88,7 @@ fun PomodoroScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Enable Deep Focus Mode",
+                text = stringResource(R.string.pomodoro_deep_mode_button),
                 style = MaterialTheme.typography.bodyLarge
             )
             Switch(
@@ -112,7 +124,7 @@ fun PomodoroScreen(
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Text(text = "Start", style = MaterialTheme.typography.titleMedium)
+                Text(text = stringResource(R.string.pomodoro_start_button), style = MaterialTheme.typography.titleMedium)
             }
         } else {
             Button(
@@ -121,27 +133,18 @@ fun PomodoroScreen(
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Text(text = "Pause", style = MaterialTheme.typography.titleMedium)
+                Text(text = stringResource(R.string.pomodoro_stop_button), style = MaterialTheme.typography.titleMedium)
             }
         }
     }
 
     // Dialog to change time
     if (pomodoroUiState.showTimeDialog) {
-        AlertDialog(
-            onDismissRequest = { pomodoroViewModel.toggleTimeDialog() },
-            title = { Text("Change Duration") },
-            text = { Text("Time picker UI goes here") },
-            confirmButton = {
-                TextButton(onClick = { pomodoroViewModel.toggleTimeDialog() }) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { pomodoroViewModel.toggleTimeDialog() }) {
-                    Text("Cancel")
-                }
-            }
+        TimerDialog(
+            dialogTimeValue = pomodoroUiState.dialogTimeValue,
+            onUserInputChange = { pomodoroViewModel.updateTimeDialogValue(it)},
+            onConfirm = { pomodoroViewModel.setTimer() },
+            onDismiss = { pomodoroViewModel.toggleTimeDialog() }
         )
     }
 }
@@ -178,10 +181,77 @@ fun TimerBlock(
             Text(
                 text = currentTime, // Replace with formatted time from state
                 style = MaterialTheme.typography.displayMedium,
-                modifier = Modifier.clickable { onTimerClick }
+                modifier = Modifier.clickable { onTimerClick() }
             )
         }
     }
+}
+
+@Composable
+fun TimerDialog(
+    dialogTimeValue: Int,
+    onDismiss: () -> Unit,
+    onUserInputChange: (String) -> Unit,
+    onConfirm: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = { onDismiss() },
+        content = {
+            Box(modifier = Modifier
+                .width(400.dp)
+                .background(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp) // 1. Rounded corners
+                )
+                .padding(16.dp) // 2. Inner padding))
+            )
+            {
+                Column() {
+                    Text(
+                        text = stringResource(R.string.pomodoro_timer_dialog),
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    OutlinedTextField(
+                        label = { Text(stringResource(R.string.pomodoro_timer_dialog)) },
+                        value = dialogTimeValue.toString(),
+                        onValueChange = onUserInputChange,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done // Shows a "Done" checkmark on keyboard
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- ADDED BUTTONS ---
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End // Aligns buttons to the right
+                    ) {
+                        TextButton(onClick = onDismiss) {
+                            Text("Cancel")
+                        }
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Button(
+                            enabled = dialogTimeValue > 0,
+                            onClick = {
+                                onConfirm()
+                                onDismiss() // Dismiss the dialog after confirming
+                            }
+                        ) {
+                            Text("OK")
+                        }
+                    }
+                }
+            }
+
+        }
+    )
 }
 
 @Preview(showBackground = true, showSystemUi = true)

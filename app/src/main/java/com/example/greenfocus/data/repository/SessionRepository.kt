@@ -51,6 +51,6 @@ class SessionRepository() {
         _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes) }
     }
     private fun timerFinished() {
-        _timerState.update { it.copy(isTimerRunning = false) }
+        _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime) }
     }
 }

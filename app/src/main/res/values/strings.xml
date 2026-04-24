@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">GreenFocus</string>
+    <string name="pomodoro_timer_dialog">Hãy nhập số phút</string>
+    <string name="pomodoro_deep_mode_button">Bật chế độ "Tập trung sâu"</string>
+    <string name="pomodoro_start_button">BẮT ĐẦU</string>
+    <string name="pomodoro_stop_button">DỪNG</string>
 </resources>

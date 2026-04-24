@@ -1,5 +1,6 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -30,9 +31,11 @@ class PomodoroViewModel() : ViewModel() {
                 } else 1f
                 _uiState.update { currentState ->
                     currentState.copy(
+                        dialogTimeValue = timerState.currentTime / 60,
                         isTimerRunning = timerState.isTimerRunning,
                         currentPercentage = progress,
-                        formattedTime = formatTime(timerState.currentTime)
+                        formattedTime = formatTime(timerState.currentTime),
+
                     )
                 }
             }
@@ -41,7 +44,11 @@ class PomodoroViewModel() : ViewModel() {
     fun toggleTimeDialog() {
         _uiState.update { currentState -> currentState.copy(showTimeDialog = !currentState.showTimeDialog)}
     }
+    fun updateTimeDialogValue(value: String) {
+        _uiState.update { currentState -> currentState.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
+    }
     fun toggleDeepFocus() {
+        Log.d("POMODORO", "test")
         _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
     }
 
@@ -53,9 +60,17 @@ class PomodoroViewModel() : ViewModel() {
         sessionRepository.pauseTimer()
     }
 
-    fun setTimer(minutes: Int) {
-        sessionRepository.setTimer(minutes)
+    fun setTimer() {
+        sessionRepository.setTimer(_uiState.value.dialogTimeValue)
     }
+
+    /**
+     * Test function để thử khi timer chạy xong
+     */
+//    fun toggleFinishDialog() {
+//        _uiState.update()
+//    }
+
     /**
      * Helper function to format seconds into MM:SS string
      */

@@ -36,7 +36,7 @@ data class TreeItem(val id: Int, val drawableRes: Int)
 @Composable
 fun PomodoroScreen(
     modifier: Modifier = Modifier,
-    pomodoroViewModel: PomodoroViewModel = viewModel()
+    pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory)
 ) {
     // In a real app, these would come from pomodoroViewModel.pomodoroUiState
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()

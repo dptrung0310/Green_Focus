@@ -1,22 +1,33 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.se.omapi.Session
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.data.repository.SessionRepository
+import com.example.greenfocus.util.TimerForegroundService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class PomodoroViewModel() : ViewModel() {
+class PomodoroViewModel(
+    private val sessionRepository: SessionRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(PomodoroUiState())
     var pomodoroUiState : StateFlow<PomodoroUiState> = _uiState.asStateFlow()
 
-    private val sessionRepository: SessionRepository = SessionRepository()
     init {
         // As soon as the ViewModel is created, start listening to the TimerManager
         observeTimer()
@@ -48,7 +59,6 @@ class PomodoroViewModel() : ViewModel() {
         _uiState.update { currentState -> currentState.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
     }
     fun toggleDeepFocus() {
-        Log.d("POMODORO", "test")
         _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
     }
 
@@ -63,6 +73,27 @@ class PomodoroViewModel() : ViewModel() {
     fun setTimer() {
         sessionRepository.setTimer(_uiState.value.dialogTimeValue)
     }
+
+    // Prepare for TimerForegroundService
+//     Inside your Activity or a helper class called by the ViewModel
+//    fun startTimerService(context: Context) {
+//        val intent = Intent(context, TimerForegroundService::class.java).apply {
+//            action = "ACTION_START"
+//        }
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            context.startForegroundService(intent)
+//        } else {
+//            context.startService(intent)
+//        }
+//    }
+//
+//    fun pauseTimerService(context: Context) {
+//        val intent = Intent(context, TimerForegroundService::class.java).apply {
+//            action = "ACTION_PAUSE"
+//        }
+//        context.startService(intent)
+//    }
 
     /**
      * Test function để thử khi timer chạy xong
@@ -79,5 +110,15 @@ class PomodoroViewModel() : ViewModel() {
         val remainingSeconds = seconds % 60
         // Use String.format to ensure two digits (e.g., "05" instead of "5")
         return String.format("%02d:%02d", minutes, remainingSeconds)
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as GreenFocusApp)
+                val sessionRepository = application.container.sessionRepository
+                PomodoroViewModel(sessionRepository = sessionRepository)
+            }
+        }
     }
 }

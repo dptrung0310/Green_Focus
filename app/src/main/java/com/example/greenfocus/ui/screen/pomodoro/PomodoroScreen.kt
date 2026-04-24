@@ -1,5 +1,6 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
+import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -38,7 +40,8 @@ fun PomodoroScreen(
     modifier: Modifier = Modifier,
     pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory)
 ) {
-    // In a real app, these would come from pomodoroViewModel.pomodoroUiState
+
+    val context = LocalContext.current
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
 
     // Sample list of trees
@@ -119,7 +122,7 @@ fun PomodoroScreen(
         // 5. Start Timer Button
         if (!pomodoroUiState.isTimerRunning) {
             Button (
-                onClick = { pomodoroViewModel.startTimer() },
+                onClick = { pomodoroViewModel.startTimerService(context) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -128,7 +131,7 @@ fun PomodoroScreen(
             }
         } else {
             Button(
-                onClick = { pomodoroViewModel.pauseTimer() },
+                onClick = { pomodoroViewModel.stopTimerService(context) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)

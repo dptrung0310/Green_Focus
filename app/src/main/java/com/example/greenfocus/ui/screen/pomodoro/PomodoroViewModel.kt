@@ -62,45 +62,44 @@ class PomodoroViewModel(
         _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
     }
 
-    fun startTimer() {
-        sessionRepository.startTimer(viewModelScope)
-    }
-
-    fun pauseTimer() {
-        sessionRepository.pauseTimer()
-    }
-
+//    fun startTimer() {
+//        sessionRepository.startTimer(viewModelScope)
+//    }
+//
+//    fun pauseTimer() {
+//        sessionRepository.pauseTimer()
+//    }
+//
     fun setTimer() {
-        sessionRepository.setTimer(_uiState.value.dialogTimeValue)
+         sessionRepository.setTimer(_uiState.value.dialogTimeValue)
     }
 
-    // Prepare for TimerForegroundService
-//     Inside your Activity or a helper class called by the ViewModel
-//    fun startTimerService(context: Context) {
-//        val intent = Intent(context, TimerForegroundService::class.java).apply {
-//            action = "ACTION_START"
-//        }
-//
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            context.startForegroundService(intent)
-//        } else {
-//            context.startService(intent)
-//        }
-//    }
-//
-//    fun pauseTimerService(context: Context) {
-//        val intent = Intent(context, TimerForegroundService::class.java).apply {
-//            action = "ACTION_PAUSE"
-//        }
-//        context.startService(intent)
-//    }
+    fun startTimerService(context: Context) {
+        val intent = Intent(context, TimerForegroundService::class.java).apply {
+            action = "ACTION_START"
+        }
 
-    /**
-     * Test function để thử khi timer chạy xong
-     */
-//    fun toggleFinishDialog() {
-//        _uiState.update()
-//    }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    fun pauseTimerService(context: Context) {
+        val intent = Intent(context, TimerForegroundService::class.java).apply {
+            action = "ACTION_PAUSE"
+        }
+        context.startService(intent)
+    }
+
+    fun stopTimerService(context: Context) {
+        val intent = Intent(context, TimerForegroundService::class.java).apply {
+            action = "ACTION_STOP"
+        }
+        context.startService(intent)
+    }
+
 
     /**
      * Helper function to format seconds into MM:SS string

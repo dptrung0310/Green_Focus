@@ -3,10 +3,6 @@ package com.example.greenfocus.ui.screen.pomodoro
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.se.omapi.Session
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -62,14 +58,6 @@ class PomodoroViewModel(
         _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
     }
 
-//    fun startTimer() {
-//        sessionRepository.startTimer(viewModelScope)
-//    }
-//
-//    fun pauseTimer() {
-//        sessionRepository.pauseTimer()
-//    }
-//
     fun setTimer() {
          sessionRepository.setTimer(_uiState.value.dialogTimeValue)
     }
@@ -86,12 +74,12 @@ class PomodoroViewModel(
         }
     }
 
-    fun pauseTimerService(context: Context) {
-        val intent = Intent(context, TimerForegroundService::class.java).apply {
-            action = "ACTION_PAUSE"
-        }
-        context.startService(intent)
-    }
+//    fun pauseTimerService(context: Context) {
+//        val intent = Intent(context, TimerForegroundService::class.java).apply {
+//            action = "ACTION_PAUSE"
+//        }
+//        context.startService(intent)
+//    }
 
     fun stopTimerService(context: Context) {
         val intent = Intent(context, TimerForegroundService::class.java).apply {

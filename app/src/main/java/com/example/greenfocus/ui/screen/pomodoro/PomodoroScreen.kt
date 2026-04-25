@@ -1,5 +1,13 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +31,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.theme.GreenFocusTheme
 import com.example.greenfocus.R
@@ -37,7 +47,18 @@ fun PomodoroScreen(
 ) {
 
     val context = LocalContext.current
+    val activity = context as? Activity
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                pomodoroViewModel.startTimerService(context)
+            } else {
+                Log.d("WARNING", "User denied Post Perm, now they can't run the app :(")
+            }
+        }
+    )
 
     // Sample list of trees
     val trees = listOf(
@@ -117,7 +138,35 @@ fun PomodoroScreen(
         // 5. Start Timer Button
         if (!pomodoroUiState.isTimerRunning) {
             Button (
-                onClick = { pomodoroViewModel.startTimerService(context) },
+                onClick = {
+                    // 3-step permission check shenanigan
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    when {
+                        // SCENARIO 1: Green Light
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == PackageManager.PERMISSION_GRANTED -> {
+                            pomodoroViewModel.startTimerService(context)
+                        }
+
+                        // SCENARIO 2: Needs Explanation
+                        activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+                            activity,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) -> {
+                            pomodoroViewModel.toggleRationaleDialog()// This triggers the AlertDialog above
+                        }
+
+                        // SCENARIO 3: First Time Ask
+                        else -> {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                } else {
+                    // Android 12 and below don't require this specific permission
+                    pomodoroViewModel.startTimerService(context)
+                } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -143,6 +192,12 @@ fun PomodoroScreen(
             onUserInputChange = { pomodoroViewModel.updateTimeDialogValue(it)},
             onConfirm = { pomodoroViewModel.setTimer() },
             onDismiss = { pomodoroViewModel.toggleTimeDialog() }
+        )
+    }
+    if (pomodoroUiState.showRationaleDialog) {
+        RationaleDialog(
+            onDismiss = { pomodoroViewModel.toggleRationaleDialog() },
+            permissionLauncher = permissionLauncher
         )
     }
 }
@@ -230,7 +285,7 @@ fun TimerDialog(
                         horizontalArrangement = Arrangement.End // Aligns buttons to the right
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.dialog_cancel))
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
@@ -242,12 +297,33 @@ fun TimerDialog(
                                 onDismiss() // Dismiss the dialog after confirming
                             }
                         ) {
-                            Text("OK")
+                            Text(stringResource(R.string.dialog_confirm))
                         }
                     }
                 }
             }
 
+        }
+    )
+}
+
+@Composable
+fun RationaleDialog(
+    onDismiss: () -> Unit,
+    permissionLauncher: ManagedActivityResultLauncher<String, Boolean>
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(stringResource(R.string.rationale_dialog_title)) },
+        text = { Text(stringResource(R.string.rationale_dialog_content)) },
+        confirmButton = {
+            TextButton(onClick = {
+                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                onDismiss()
+            }) { Text(stringResource(R.string.dialog_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.dialog_dismiss)) }
         }
     )
 }

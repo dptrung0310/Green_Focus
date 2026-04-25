@@ -51,6 +51,9 @@ class PomodoroViewModel(
     fun toggleTimeDialog() {
         _uiState.update { currentState -> currentState.copy(showTimeDialog = !currentState.showTimeDialog)}
     }
+    fun toggleRationaleDialog() {
+        _uiState.update { currentState -> currentState.copy(showRationaleDialog = !currentState.showRationaleDialog)}
+    }
     fun updateTimeDialogValue(value: String) {
         _uiState.update { currentState -> currentState.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
     }
@@ -63,6 +66,7 @@ class PomodoroViewModel(
     }
 
     fun startTimerService(context: Context) {
+
         val intent = Intent(context, TimerForegroundService::class.java).apply {
             action = "ACTION_START"
         }

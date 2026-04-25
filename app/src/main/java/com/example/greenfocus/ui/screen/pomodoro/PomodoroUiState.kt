@@ -8,5 +8,6 @@ data class PomodoroUiState (
     val currentPercentage: Float = 0.0f,
     val currentTreeId: String = "",
     val showTimeDialog: Boolean = false,
+    val showRationaleDialog: Boolean = false,
     val isDeepFocusEnabled: Boolean = false
 )

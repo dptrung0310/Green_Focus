@@ -9,4 +9,7 @@
     <string name="dialog_confirm">OK</string>
     <string name="dialog_cancel">Hủy</string>
     <string name="dialog_dismiss">Từ chối</string>
+    <string name="tree_oak">Cây Sồi</string>
+    <string name="tree_pine">Cây Thông</string>
+    <string name="tree_cherry">Cây Anh Đào</string>
 </resources>

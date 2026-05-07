@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,6 +37,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.theme.GreenFocusTheme
 import com.example.greenfocus.R
+import com.example.greenfocus.data.DataSource
+import com.example.greenfocus.data.model.TreeType
 
 // Sample data class for the tree list
 data class TreeItem(val id: Int, val drawableRes: Int)
@@ -60,13 +63,6 @@ fun PomodoroScreen(
         }
     )
 
-    // Sample list of trees
-    val trees = listOf(
-        TreeItem(1, R.drawable.ic_launcher_background), // Replace with your drawables
-        TreeItem(2, R.drawable.ic_launcher_background),
-        TreeItem(3, R.drawable.ic_launcher_background)
-    )
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -88,9 +84,10 @@ fun PomodoroScreen(
         // 2. Timer with Circular Progress, Image, and Countdown
         TimerBlock(
             currentTime = pomodoroUiState.formattedTime,
-            currentTree = R.drawable.ic_launcher_background,
+            currentTree = pomodoroUiState.selectedTreeImage,
             currentProgress = pomodoroUiState.currentPercentage,
-            onTimerClick = { pomodoroViewModel.toggleTimeDialog() }
+            onTimerClick = { pomodoroViewModel.toggleTimeDialog() },
+            isTimerRunning = pomodoroUiState.isTimerRunning
         )
 
         // 3. Deep Focus Mode Toggle Block
@@ -100,6 +97,7 @@ fun PomodoroScreen(
                 .padding(horizontal = 8.dp)
                 .toggleable(
                     value = pomodoroUiState.isDeepFocusEnabled,
+                    enabled = !pomodoroUiState.isTimerRunning,
                     onValueChange = { pomodoroViewModel.toggleDeepFocus() },
                     role = Role.Switch
                 ),
@@ -117,23 +115,11 @@ fun PomodoroScreen(
         }
 
         // 4. Scrollable Row of Tree Buttons
-        LazyRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(horizontal = 8.dp)
-        ) {
-            items(trees) { tree ->
-                IconButton(
-                    onClick = { /* Select tree action */ },
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = tree.drawableRes),
-                        contentDescription = "Select tree ${tree.id}"
-                    )
-                }
-            }
-        }
+        TreeSelectionRow(
+            isTimerRunning = pomodoroUiState.isTimerRunning,
+            selectedTree = pomodoroUiState.selectedTree,
+            changeSelectedTree = { pomodoroViewModel.updateSelectedTree(it) }
+        )
 
         // 5. Start Timer Button
         if (!pomodoroUiState.isTimerRunning) {
@@ -207,7 +193,8 @@ fun TimerBlock(
     currentTime: String,
     currentProgress: Float,
     currentTree: Int,
-    onTimerClick: () -> Unit
+    onTimerClick: () -> Unit,
+    isTimerRunning: Boolean
 ) {
     Box(
         contentAlignment = Alignment.Center,
@@ -232,9 +219,12 @@ fun TimerBlock(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = currentTime, // Replace with formatted time from state
+                text = currentTime,
                 style = MaterialTheme.typography.displayMedium,
-                modifier = Modifier.clickable { onTimerClick() }
+                modifier = Modifier.clickable(
+                    enabled = !isTimerRunning, // Only clickable when the timer is NOT running
+                    onClick = { onTimerClick() }
+                )
             )
         }
     }
@@ -306,6 +296,54 @@ fun TimerDialog(
         }
     )
 }
+
+@Composable
+fun TreeSelectionRow(
+    isTimerRunning: Boolean,
+    selectedTree: TreeType,
+    changeSelectedTree: (TreeType) -> Unit
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp)
+    ) {
+        items(DataSource.plants) { tree ->
+            val isSelected = selectedTree.id == tree.id
+
+            // Using Surface instead of IconButton for better background and shadow control
+            Surface(
+                onClick = { changeSelectedTree(tree) },
+                enabled = !isTimerRunning,
+                modifier = Modifier.size(96.dp), // 1. Noticeably bigger size!
+                shape = RoundedCornerShape(24.dp), // 2. Smooth, modern rounded corners
+
+                // 3. Background Color: Use your app's primary color when selected, soft grey when not
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color(0xFFF5F5F5),
+
+                // 4. Border: Add a hard outline to the selected item to make it stand out instantly
+                border = if (isSelected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
+
+                // 5. Shadow: Drops a subtle shadow so the button lifts off the white background
+                shadowElevation = if (isSelected) 8.dp else 2.dp
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Image(
+                        painter = painterResource(id = tree.imageStaticBig),
+                        contentDescription = "Select tree ${tree.id}",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp) // Keeps the tree image safely inside the borders
+                    )
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun RationaleDialog(

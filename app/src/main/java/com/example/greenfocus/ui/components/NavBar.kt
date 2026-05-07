@@ -12,17 +12,18 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.greenfocus.ui.theme.BannerGreen
+import com.example.greenfocus.ui.theme.AuthGreenLight
 import com.example.greenfocus.R
 
-data class NavItem(val route: String, val iconRes: Int)
+data class NavItem(val route: String, val label: String, val iconRes: Int)
+
 val navItems = listOf(
-    NavItem("Home", R.drawable.home),
-    NavItem("Forest", R.drawable.forest),
-    NavItem("Stats", R.drawable.stats),
-    NavItem("Store", R.drawable.store),
-    NavItem("Social", R.drawable.social),
-    NavItem("Profile", R.drawable.profile)
+    NavItem(route = "home",    label = "Home",    iconRes = R.drawable.home),
+    NavItem(route = "forest",  label = "Forest",  iconRes = R.drawable.forest),
+    NavItem(route = "stats",   label = "Stats",   iconRes = R.drawable.stats),
+    NavItem(route = "store",   label = "Store",   iconRes = R.drawable.store),
+    NavItem(route = "social",  label = "Social",  iconRes = R.drawable.social),
+    NavItem(route = "profile", label = "Profile", iconRes = R.drawable.profile),
 )
 
 @Composable
@@ -31,33 +32,32 @@ fun BottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
+            .navigationBarsPadding()
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
         navItems.forEach { item ->
             val isSelected = item.route == currentRoute
-            val contentColor = if (isSelected) BannerGreen else Color.Gray
+            val contentColor = if (isSelected) AuthGreenLight else Color.Gray
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clickable { onNavigate(item.route) }
-                    .padding(4.dp)
+                    .padding(horizontal = 4.dp, vertical = 4.dp)
             ) {
                 Icon(
                     painter = painterResource(id = item.iconRes),
-                    contentDescription = item.route,
+                    contentDescription = item.label,
                     tint = contentColor,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(if (isSelected) 26.dp else 22.dp)
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = item.route,
+                    text = item.label,
                     color = contentColor,
-                    fontSize = 10.sp
+                    fontSize = 9.sp
                 )
             }
         }

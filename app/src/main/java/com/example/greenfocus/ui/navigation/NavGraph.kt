@@ -1,13 +1,6 @@
 package com.example.greenfocus.ui.navigation
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -17,7 +10,7 @@ import com.example.greenfocus.ui.screen.auth.AuthViewModel
 import com.example.greenfocus.ui.screen.auth.LoginScreen
 import com.example.greenfocus.ui.screen.auth.OpeningScreen
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
-import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
+import com.example.greenfocus.ui.screen.main.MainScreen
 
 @Composable
 fun SetupNavGraph(navController: NavHostController) {
@@ -29,10 +22,24 @@ fun SetupNavGraph(navController: NavHostController) {
             OpeningScreen(
                 onFinished = {
                     val currentUser = FirebaseModule.auth.currentUser
-                    val nextRoute = if (currentUser != null) Screen.Home.route else Screen.Login.route
-
+                    val nextRoute = if (currentUser != null) Screen.Main.route else Screen.Login.route
                     navController.navigate(nextRoute) {
                         popUpTo("opening") { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(route = Screen.Login.route) {
+            val authViewModel: AuthViewModel = viewModel()
+            LoginScreen(
+                onNavigateToRegister = {
+                    authViewModel.clearErrors()
+                    navController.navigate(Screen.Register.route)
+                },
+                onNavigateToHome = {
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
             )
@@ -42,7 +49,7 @@ fun SetupNavGraph(navController: NavHostController) {
             val authViewModel: AuthViewModel = viewModel()
             RegisterScreen(
                 onNavigateToHome = {
-                    navController.navigate(Screen.Home.route) {
+                    navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 },
@@ -57,23 +64,8 @@ fun SetupNavGraph(navController: NavHostController) {
             )
         }
 
-        composable(route = Screen.Login.route) {
-            val authViewModel: AuthViewModel = viewModel()
-            LoginScreen(
-                onNavigateToRegister = {
-                    authViewModel.clearErrors()
-                    navController.navigate(Screen.Register.route)
-                },
-                onNavigateToHome = {
-                    navController.navigate(Screen.Home.route){
-                        popUpTo(Screen.Login.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(route = Screen.Home.route) {
-            PomodoroScreen(
+        composable(route = Screen.Main.route) {
+            MainScreen(
                 onLogout = {
                     FirebaseModule.auth.signOut()
                     navController.navigate(Screen.Login.route) {
@@ -83,7 +75,5 @@ fun SetupNavGraph(navController: NavHostController) {
                 }
             )
         }
-
-        // ... Tương tự cho Shop, Forest
     }
 }

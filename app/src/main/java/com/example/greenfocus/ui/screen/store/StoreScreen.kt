@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +17,6 @@ import androidx.compose.ui.unit.sp
 import com.example.greenfocus.data.model.StoreTreeItem
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.model.TreeStatus
-import com.example.greenfocus.ui.components.BottomNavBar
 import com.example.greenfocus.ui.components.CoinContainer
 import com.example.greenfocus.ui.components.TreeCard
 import com.example.greenfocus.ui.theme.*
@@ -26,9 +24,7 @@ import com.example.greenfocus.ui.theme.*
 import com.example.greenfocus.R
 
 @Composable
-fun StoreScreen (
-    onNavigate: (String) -> Unit
-) {
+fun StoreScreen() {
 
     val mockTrees = listOf(
         StoreTreeItem(
@@ -65,21 +61,13 @@ fun StoreScreen (
         )
     )
 
-    Scaffold(
-        bottomBar = {
-            BottomNavBar(
-                currentRoute = "Store",
-                onNavigate = onNavigate
-            )
-        }
-    ) { innerPadding ->
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxSize()
-                .background(StoreBackGround)
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(StoreBackGround)
+            .padding(horizontal = 16.dp)
+            .statusBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -138,6 +126,4 @@ fun StoreScreen (
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-
-    }
 }

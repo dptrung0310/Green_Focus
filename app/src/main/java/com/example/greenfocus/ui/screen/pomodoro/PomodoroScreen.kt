@@ -49,8 +49,7 @@ data class TreeItem(val id: Int, val drawableRes: Int)
 @Composable
 fun PomodoroScreen(
     modifier: Modifier = Modifier,
-    pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory),
-    onLogout: () -> Unit = {}
+    pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory)
 ) {
 
     val context = LocalContext.current
@@ -77,19 +76,13 @@ fun PomodoroScreen(
         // 1. Username Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Xin chào X",
                 style = MaterialTheme.typography.headlineSmall
             )
-            IconButton(onClick = onLogout) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Đăng xuất"
-                )
-            }
         }
 
         // 2. Timer with Circular Progress, Image, and Countdown

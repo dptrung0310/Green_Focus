@@ -1,6 +1,7 @@
 package com.example.greenfocus.data.repository
 
 import android.content.Context
+import android.util.Log
 import androidx.work.WorkManager
 import com.example.greenfocus.data.model.FocusSession
 import kotlinx.coroutines.CoroutineScope
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 data class TimerState(
     val isTimerRunning: Boolean = false,
     val currentTime: Int = 25 * 60,
-    val totalTime: Int = 25 * 60
+    val totalTime: Int = 25 * 60,
+
 )
 class SessionRepository() {
     private var timerJob: Job? = null
@@ -44,6 +46,7 @@ class SessionRepository() {
     fun pauseTimer() {
         timerJob?.cancel()
         _timerState.update { it.copy(isTimerRunning = false) }
+        timerCancelled()
     }
 
     fun setTimer(minutes: Int) {
@@ -52,5 +55,10 @@ class SessionRepository() {
     }
     private fun timerFinished() {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime) }
+        Log.d("SESSION_REPO_TIMER", "Timer finished normally");
+    }
+
+    private fun timerCancelled() {
+        Log.d("SESSION_REPO_TIMER", "Timer stopped mid-way");
     }
 }

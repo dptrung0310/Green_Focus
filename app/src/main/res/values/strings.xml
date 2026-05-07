@@ -12,4 +12,9 @@
     <string name="tree_oak">Cây Sồi</string>
     <string name="tree_pine">Cây Thông</string>
     <string name="tree_cherry">Cây Anh Đào</string>
+    <string name="tree_maple">Cây Phong</string>
+    <string name="tree_palm">Cây Cọ</string>
+    <string name="tree_cactus">Xương Rồng</string>
+    <string name="tree_bamboo">Cây Tre</string>
+    <string name="tree_sakura">Hoa Anh Đào</string>
 </resources>

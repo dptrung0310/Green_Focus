@@ -23,6 +23,8 @@ import com.example.greenfocus.ui.components.CoinContainer
 import com.example.greenfocus.ui.components.TreeCard
 import com.example.greenfocus.ui.theme.*
 
+import com.example.greenfocus.R
+
 @Composable
 fun StoreScreen (
     onNavigate: (String) -> Unit
@@ -30,35 +32,35 @@ fun StoreScreen (
 
     val mockTrees = listOf(
         StoreTreeItem(
-            tree = TreeType(id = "1", name = "Oak Tree", description = "Classic", imageStatic = "tree_oak"),
+            tree = TreeType(id = "1", name = R.string.tree_oak, description = "Classic", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.OWNED
         ),
         StoreTreeItem(
-            tree = TreeType(id = "2", name = "Pine Tree", description = "Evergreen focus", imageStatic = "tree_pine"),
+            tree = TreeType(id = "2", name = R.string.tree_pine, description = "Evergreen focus", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.OWNED
         ),
         StoreTreeItem(
-            tree = TreeType(id = "3", name = "Cherry Blossom", description = "Beautiful and calm", imageStatic = "tree_cherry"),
+            tree = TreeType(id = "3", name = R.string.tree_cherry, description = "Beautiful and calm", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.OWNED
         ),
         StoreTreeItem(
-            tree = TreeType(id = "4", name = "Maple Tree", description = "Autumn vibes", price = 500, imageStatic = "tree_maple"),
+            tree = TreeType(id = "4", name = R.string.tree_maple, description = "Autumn vibes", price = 500, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "5", name = "Palm Tree", description = "Tropical paradise", price = 750, imageStatic = "tree_palm"),
+            tree = TreeType(id = "5", name = R.string.tree_palm, description = "Tropical paradise", price = 750, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "6", name = "Cactus", description = "Desert warrior", price = 1000, imageStatic = "tree_cactus"),
+            tree = TreeType(id = "6", name = R.string.tree_cactus, description = "Desert warrior", price = 1000, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "7", name = "Bamboo", description = "Zen master", price = 1250, imageStatic = "tree_bamboo"),
+            tree = TreeType(id = "7", name = R.string.tree_bamboo, description = "Zen master", price = 1250, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "8", name = "Sakura", description = "Legendary beauty", imageStatic = "tree_sakura"),
+            tree = TreeType(id = "8", name = R.string.tree_sakura, description = "Legendary beauty", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.LOCKED
         )
     )

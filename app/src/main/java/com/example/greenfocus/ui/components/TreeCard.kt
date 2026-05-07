@@ -17,7 +17,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.greenfocus.data.model.StoreTreeItem
-import com.example.greenfocus.data.model.TreeResourceMapper
 import com.example.greenfocus.data.model.TreeStatus
 import com.example.greenfocus.ui.theme.*
 
@@ -29,9 +28,6 @@ fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
         TreeStatus.BUYABLE -> CardNormal
     }
 
-    val imageResId = TreeResourceMapper.getDrawableResId(tree.tree.imageStatic)
-
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -41,8 +37,8 @@ fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Image(
-            painter = painterResource(id = imageResId),
-            contentDescription = tree.tree.name,
+            painter = painterResource(id = tree.tree.imageStaticBig),
+            contentDescription = androidx.compose.ui.res.stringResource(id = tree.tree.name),
             modifier = Modifier.size(100.dp),
             contentScale = ContentScale.Fit
         )
@@ -50,7 +46,7 @@ fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = tree.tree.name,
+            text = androidx.compose.ui.res.stringResource(id = tree.tree.name),
             fontWeight = FontWeight.Bold,
             fontSize = 16.sp,
             color = if (tree.status == TreeStatus.LOCKED) TextMuted else TextDark

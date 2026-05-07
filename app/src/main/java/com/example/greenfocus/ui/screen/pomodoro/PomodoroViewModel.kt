@@ -3,6 +3,7 @@ package com.example.greenfocus.ui.screen.pomodoro
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import com.example.greenfocus.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -10,7 +11,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.greenfocus.GreenFocusApp
+import com.example.greenfocus.data.DataSource
+import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.repository.SessionRepository
+import com.example.greenfocus.data.repository.SessionState
 import com.example.greenfocus.util.TimerForegroundService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,12 +46,29 @@ class PomodoroViewModel(
                         isTimerRunning = timerState.isTimerRunning,
                         currentPercentage = progress,
                         formattedTime = formatTime(timerState.currentTime),
-
                     )
+                }
+                when (timerState.sessionState) {
+                    SessionState.INIT -> {
+                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSeed)}
+                    }
+                    SessionState.SUCCESS -> {
+                        onTimerFinishedSuccessfully()
+                    }
+                    SessionState.FAILED -> {
+                        onTimerFailed()
+                    }
+                    SessionState.HALF_DONE -> {
+                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSmall)}
+                    }
+                    else -> {
+                        // Do nothing for INIT or RUNNING
+                    }
                 }
             }
         }
     }
+
     fun toggleTimeDialog() {
         _uiState.update { currentState -> currentState.copy(showTimeDialog = !currentState.showTimeDialog)}
     }
@@ -56,6 +77,16 @@ class PomodoroViewModel(
     }
     fun updateTimeDialogValue(value: String) {
         _uiState.update { currentState -> currentState.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
+    }
+
+    fun updateSelectedTree(value: TreeType) {
+        sessionRepository.setTreeId(value.id)
+        _uiState.update { currentState -> currentState.copy(selectedTree = value) }
+        updateSelectedTreeImage(value.imageStaticSeed)
+    }
+
+    fun updateSelectedTreeImage(value: Int) {
+        _uiState.update { currentState -> currentState.copy(selectedTreeImage = value) }
     }
     fun toggleDeepFocus() {
         _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
@@ -78,13 +109,6 @@ class PomodoroViewModel(
         }
     }
 
-//    fun pauseTimerService(context: Context) {
-//        val intent = Intent(context, TimerForegroundService::class.java).apply {
-//            action = "ACTION_PAUSE"
-//        }
-//        context.startService(intent)
-//    }
-
     fun stopTimerService(context: Context) {
         val intent = Intent(context, TimerForegroundService::class.java).apply {
             action = "ACTION_STOP"
@@ -93,6 +117,13 @@ class PomodoroViewModel(
     }
 
 
+    private fun onTimerFailed() {
+        _uiState.update { it.copy(selectedTreeImage = R.drawable.dead_tree)}
+    }
+
+    private fun onTimerFinishedSuccessfully() {
+        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticBig)}
+    }
     /**
      * Helper function to format seconds into MM:SS string
      */

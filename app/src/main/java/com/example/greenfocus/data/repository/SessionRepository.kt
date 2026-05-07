@@ -12,12 +12,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+enum class SessionState {
+    INIT,
+    RUNNING,
+    HALF_DONE,
+    FAILED,
+    SUCCESS
+}
 
 data class TimerState(
     val isTimerRunning: Boolean = false,
     val currentTime: Int = 25 * 60,
     val totalTime: Int = 25 * 60,
-
+    val sessionState: SessionState = SessionState.INIT,
+    val treeId: String = "oak"
 )
 class SessionRepository() {
     private var timerJob: Job? = null
@@ -33,11 +41,15 @@ class SessionRepository() {
             durationMinutes = _timerState.value.currentTime / 60)
 
         if (_timerState.value.isTimerRunning) return;
-        _timerState.update { it.copy(isTimerRunning = true) }
+        _timerState.update { it.copy(isTimerRunning = true, sessionState = SessionState.INIT) }
+        _timerState.update { it.copy(sessionState = SessionState.RUNNING) }
         timerJob = scope.launch {
             while (_timerState.value.currentTime > 0) {
                 delay(1000L)
                 _timerState.update { it.copy(currentTime = it.currentTime - 1) }
+                if (_timerState.value.currentTime * 2 == _timerState.value.totalTime) {
+                    _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
+                }
             }
             timerFinished()
         }
@@ -49,16 +61,19 @@ class SessionRepository() {
         timerCancelled()
     }
 
+    fun setTreeId(newTreeId: String) {
+        _timerState.update { it.copy(treeId = newTreeId) }
+    }
     fun setTimer(minutes: Int) {
-        pauseTimer()
-        _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes) }
+        _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes, sessionState = SessionState.INIT) }
     }
     private fun timerFinished() {
-        _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime) }
+        _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
         Log.d("SESSION_REPO_TIMER", "Timer finished normally");
     }
 
     private fun timerCancelled() {
+        _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.FAILED) }
         Log.d("SESSION_REPO_TIMER", "Timer stopped mid-way");
     }
 }

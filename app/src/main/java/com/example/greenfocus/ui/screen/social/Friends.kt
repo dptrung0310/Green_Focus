@@ -1,4 +1,4 @@
-package com.example.greenfocus.ui.screens.social
+package com.example.greenfocus.ui.screen.social
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

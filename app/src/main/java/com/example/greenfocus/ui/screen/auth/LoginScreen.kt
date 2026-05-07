@@ -1,10 +1,8 @@
-// ui/screen/auth/LoginScreen.kt
 package com.example.greenfocus.ui.screen.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -14,14 +12,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.res.painterResource
-import com.example.greenfocus.R
+import com.example.greenfocus.ui.theme.AuthBackground
+import com.example.greenfocus.ui.theme.AuthGreenDark
+import com.example.greenfocus.ui.theme.AuthGreenLight
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel = viewModel(),
@@ -31,105 +30,96 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBackground)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(AuthBackground)
     ) {
-        Spacer(modifier = Modifier.height(64.dp))
-
-        Text(
-            text = "Chào mừng trở lại!",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                color = TextDark
-            )
-        )
-        Text(
-            text = "Đăng nhập để tiếp tục trồng cây",
-            color = Color.Gray,
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_foreground),
-            contentDescription = "Logo",
-            modifier = Modifier.size(150.dp)
-        )
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email của bạn") },
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = PrimaryGreen) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryGreen,
-                focusedLabelColor = PrimaryGreen,
-                cursorColor = PrimaryGreen,
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Mật khẩu") },
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = PrimaryGreen) },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryGreen,
-                focusedLabelColor = PrimaryGreen,
-                cursorColor = PrimaryGreen,
-            )
-        )
-
-        TextButton(
-            onClick = { /* Xử lý quên mật khẩu */ },
-            modifier = Modifier.align(Alignment.End)
+        // Main Content
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 120.dp), // Leave space for the wave
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Text("Quên mật khẩu?", color = Color.Gray)
-        }
+            AuthTreeLogo(modifier = Modifier.padding(bottom = 32.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = "Welcome Back",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = AuthGreenDark
+                ),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
-        if (viewModel.isLoading) {
-            CircularProgressIndicator(color = PrimaryGreen)
-        } else {
-            Button(
-                onClick = { viewModel.login(email, password) { onNavigateToHome() } },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                shape = RoundedCornerShape(16.dp)
+            Text(
+                text = "Sign in to continue growing",
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 32.dp)
+            )
+
+            AuthTextField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = "Email",
+                icon = Icons.Default.Email,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AuthTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = "Password",
+                icon = Icons.Default.Lock,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            TextButton(
+                onClick = { /* Handle Forgot Password */ },
+                modifier = Modifier.align(Alignment.Start)
             ) {
-                Text("Đăng Nhập", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("Forgot Password?", color = AuthGreenLight, style = MaterialTheme.typography.bodySmall)
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            TextButton(onClick = onNavigateToRegister) {
-                Text("Chưa có tài khoản? ", color = Color.Gray)
-                Text("Đăng ký ngay", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+            if (viewModel.isLoading) {
+                CircularProgressIndicator(color = AuthGreenLight)
+            } else {
+                AuthGradientButton(
+                    text = "Sign In",
+                    onClick = { viewModel.login(email, password) { onNavigateToHome() } }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text("Don't have an account?", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = onNavigateToRegister) {
+                    Text("Sign Up", color = AuthGreenLight, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            viewModel.errorMessage?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(it, color = Color.Red, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
             }
         }
 
-        viewModel.errorMessage?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Tài khoản hoặc mật khẩu không chính xác!", color = Color.Red, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        }
+        // Wavy Background at the bottom
+        AuthWavyBackground(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }

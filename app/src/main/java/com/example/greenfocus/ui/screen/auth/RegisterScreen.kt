@@ -1,10 +1,10 @@
-// ui/screen/auth/RegisterScreen.kt
 package com.example.greenfocus.ui.screen.auth
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
@@ -15,14 +15,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.res.painterResource
-import com.example.greenfocus.R
+import com.example.greenfocus.ui.theme.AuthBackground
+import com.example.greenfocus.ui.theme.AuthGreenDark
+import com.example.greenfocus.ui.theme.AuthGreenLight
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: AuthViewModel = viewModel(),
@@ -32,116 +33,122 @@ fun RegisterScreen(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var localError by remember { mutableStateOf<String?>(null) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBackground)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .background(AuthBackground)
     ) {
-        Spacer(modifier = Modifier.height(64.dp))
+        // Main Content (Scrollable for smaller screens)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(top = 48.dp, bottom = 140.dp), // Space for wave
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            AuthTreeLogo(modifier = Modifier.padding(bottom = 32.dp))
 
-        Text(
-            text = "Tạo tài khoản mới",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                color = TextDark
+            Text(
+                text = "Create Account",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = AuthGreenDark
+                ),
+                modifier = Modifier.padding(bottom = 8.dp)
             )
-        )
-        Text(
-            text = "Cùng nhau xây dựng khu rừng xanh",
-            color = Color.Gray,
-            style = MaterialTheme.typography.bodyMedium
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Image(
-            painter = painterResource(id = R.drawable.ic_launcher_foreground),
-            contentDescription = "Logo",
-            modifier = Modifier.size(150.dp)
-        )
-
-        Spacer(modifier = Modifier.height(28.dp))
-
-        OutlinedTextField(
-            value = name,
-            onValueChange = { name = it },
-            label = { Text("Tên hiển thị của bạn") },
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryGreen) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryGreen,
-                focusedLabelColor = PrimaryGreen,
-                cursorColor = PrimaryGreen,
+            Text(
+                text = "Start your focus journey",
+                color = Color.Gray,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 32.dp)
             )
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = PrimaryGreen) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryGreen,
-                focusedLabelColor = PrimaryGreen,
-                cursorColor = PrimaryGreen
+            AuthTextField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = "Full Name",
+                icon = Icons.Default.Person
             )
-        )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Mật khẩu (ít nhất 6 ký tự)") },
-            singleLine = true,
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = PrimaryGreen) },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryGreen,
-                focusedLabelColor = PrimaryGreen,
-                cursorColor = PrimaryGreen,
+            AuthTextField(
+                value = email,
+                onValueChange = { email = it },
+                placeholder = "Email",
+                icon = Icons.Default.Email,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
-        )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        if (viewModel.isLoading) {
-            CircularProgressIndicator(color = PrimaryGreen)
-        } else {
-            Button(
-                onClick = { viewModel.register(email, password, name) { onNavigateToHome() } },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                shape = RoundedCornerShape(16.dp)
+            AuthTextField(
+                value = password,
+                onValueChange = { password = it },
+                placeholder = "Password",
+                icon = Icons.Default.Lock,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AuthTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                placeholder = "Confirm Password",
+                icon = Icons.Default.Lock,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (viewModel.isLoading) {
+                CircularProgressIndicator(color = AuthGreenLight)
+            } else {
+                AuthGradientButton(
+                    text = "Create Account",
+                    onClick = {
+                        localError = null
+                        if (password != confirmPassword) {
+                            localError = "Mật khẩu xác nhận không khớp"
+                            return@AuthGradientButton
+                        }
+                        viewModel.register(email, password, name) { onNavigateToHome() }
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Text("Đăng Ký", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text("Already have an account?", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                TextButton(onClick = onNavigateToLogin) {
+                    Text("Sign In", color = AuthGreenLight, fontWeight = FontWeight.Bold)
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TextButton(onClick = onNavigateToLogin) {
-                Text("Đã có tài khoản? ", color = Color.Gray)
-                Text("Đăng nhập", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+            // Display Local Error or ViewModel Error
+            val displayError = localError ?: viewModel.errorMessage
+            displayError?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(it, color = Color.Red, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodySmall)
             }
         }
 
-        viewModel.errorMessage?.let {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(it, color = Color.Red, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        }
+        // Wavy Background at the bottom
+        AuthWavyBackground(
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }

@@ -17,6 +17,7 @@ import com.example.greenfocus.ui.screen.auth.AuthViewModel
 import com.example.greenfocus.ui.screen.auth.LoginScreen
 import com.example.greenfocus.ui.screen.auth.OpeningScreen
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
+import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 
 @Composable
 fun SetupNavGraph(navController: NavHostController) {
@@ -72,18 +73,15 @@ fun SetupNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Home.route) {
-            Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Chào mừng đến với GreenFocus!")
-                Button(onClick = {
+            PomodoroScreen(
+                onLogout = {
                     FirebaseModule.auth.signOut()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
-                }) {
-                    Text("Đăng xuất")
                 }
-            }
+            )
         }
 
         // ... Tương tự cho Shop, Forest

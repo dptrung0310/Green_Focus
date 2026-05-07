@@ -17,6 +17,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,7 +46,8 @@ data class TreeItem(val id: Int, val drawableRes: Int)
 @Composable
 fun PomodoroScreen(
     modifier: Modifier = Modifier,
-    pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory)
+    pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory),
+    onLogout: () -> Unit = {}
 ) {
 
     val context = LocalContext.current
@@ -77,12 +81,19 @@ fun PomodoroScreen(
         // 1. Username Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Xin chào X",
                 style = MaterialTheme.typography.headlineSmall
             )
+            IconButton(onClick = onLogout) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                    contentDescription = "Đăng xuất"
+                )
+            }
         }
 
         // 2. Timer with Circular Progress, Image, and Countdown

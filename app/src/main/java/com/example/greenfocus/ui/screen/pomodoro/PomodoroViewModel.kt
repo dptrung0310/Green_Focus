@@ -11,7 +11,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.greenfocus.GreenFocusApp
-import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.repository.SessionRepository
 import com.example.greenfocus.data.repository.SessionState

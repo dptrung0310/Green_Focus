@@ -27,14 +27,23 @@ data class TimerState(
     val sessionState: SessionState = SessionState.INIT,
     val treeId: String = "oak"
 )
-class SessionRepository() {
+
+interface SessionRepository {
+    val timerState: StateFlow<TimerState>
+
+    fun startTimer(scope: CoroutineScope)
+    fun pauseTimer()
+    fun setTreeId(newTreeId: String)
+    fun setTimer(minutes: Int)
+}
+class ProdSessionRepository : SessionRepository {
     private var timerJob: Job? = null
     private lateinit var currentSession: FocusSession
 
     private val _timerState = MutableStateFlow(TimerState())
-    val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
+    override val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
 
-    fun startTimer(scope: CoroutineScope) {
+    override fun startTimer(scope: CoroutineScope) {
         // Chắc phải tạo FocusSession ở đây. Sẽ cần chỉnh sửa
         currentSession = FocusSession(
             startTime = System.currentTimeMillis(),
@@ -55,16 +64,16 @@ class SessionRepository() {
         }
     }
 
-    fun pauseTimer() {
+    override fun pauseTimer() {
         timerJob?.cancel()
         _timerState.update { it.copy(isTimerRunning = false) }
         timerCancelled()
     }
 
-    fun setTreeId(newTreeId: String) {
+    override fun setTreeId(newTreeId: String) {
         _timerState.update { it.copy(treeId = newTreeId) }
     }
-    fun setTimer(minutes: Int) {
+    override fun setTimer(minutes: Int) {
         _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes, sessionState = SessionState.INIT) }
     }
     private fun timerFinished() {

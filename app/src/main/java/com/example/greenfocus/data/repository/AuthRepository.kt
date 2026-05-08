@@ -4,11 +4,15 @@ import com.example.greenfocus.data.model.User
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
 
-class AuthRepository {
+interface AuthRepository {
+    fun signUp(email: String, password: String, name: String, onResult: (Boolean, String?) -> Unit)
+    fun login(email: String, pass: String, onResult: (isSuccess: Boolean, errorMessage: String?) -> Unit)
+}
+class ProdAuthRepository : AuthRepository {
     private val auth = FirebaseModule.auth
     private val db = FirebaseModule.firestore
 
-    fun signUp(email: String, password: String, name: String, onResult: (Boolean, String?) -> Unit) {
+    override fun signUp(email: String, password: String, name: String, onResult: (Boolean, String?) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid ?: ""
@@ -22,7 +26,7 @@ class AuthRepository {
             .addOnFailureListener { e -> onResult(false, e.message) }
     }
 
-    fun login(email: String, pass: String, onResult: (Boolean, String?) -> Unit) {
+    override fun login(email: String, pass: String, onResult: (Boolean, String?) -> Unit) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnCompleteListener { task ->
                 if (task.isSuccessful) {

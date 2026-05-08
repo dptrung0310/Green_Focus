@@ -13,7 +13,6 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.MainActivity
-import com.example.greenfocus.data.repository.SessionRepository
 import kotlinx.coroutines.launch
 
 class TimerForegroundService : LifecycleService() {
@@ -22,26 +21,26 @@ class TimerForegroundService : LifecycleService() {
     private val NOTIFICATION_ID = 1
     private val FINISHED_NOTIFICATION_ID = 2
 
-    private lateinit var repository: SessionRepository
+    private lateinit var timerManager: TimerManager
     private lateinit var notificationManager: NotificationManager
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
-        repository = (application as GreenFocusApp).container.sessionRepository
+        timerManager = (application as GreenFocusApp).container.timerManager
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         createNotificationChannel()
 
         // 1. Calculate the exact finish time based on the repository's current state
-        val remainingSeconds = repository.timerState.value.currentTime
+        val remainingSeconds = timerManager.timerState.value.currentTime
         val targetTimeMillis = System.currentTimeMillis() + (remainingSeconds * 1000L)
 
         // 2. Start the foreground service immediately with the Chronometer notification
         startForeground(NOTIFICATION_ID, buildChronometerNotification(targetTimeMillis))
 
         lifecycleScope.launch {
-            repository.timerState.collect { state ->
+            timerManager.timerState.collect { state ->
                 if (state.currentTime <= 0) {
                     notificationManager.notify(FINISHED_NOTIFICATION_ID, buildFinishedNotification())
                     stopSelf()
@@ -54,14 +53,14 @@ class TimerForegroundService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
 
         when (intent?.action) {
-            "ACTION_START" -> repository.startTimer(lifecycleScope)
+            "ACTION_START" -> timerManager.startTimer(lifecycleScope)
             "ACTION_PAUSE" -> {
-                repository.pauseTimer()
+                timerManager.pauseTimer()
                 // If paused, you might want to switch to a static text notification
 
             }
             "ACTION_STOP" -> {
-                repository.pauseTimer()
+                timerManager.pauseTimer()
                 stopSelf()
             }
         }

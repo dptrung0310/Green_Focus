@@ -11,7 +11,6 @@ import com.example.greenfocus.ui.screen.auth.LoginScreen
 import com.example.greenfocus.ui.screen.auth.OpeningScreen
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
 import com.example.greenfocus.ui.screen.main.MainScreen
-
 @Composable
 fun SetupNavGraph(navController: NavHostController) {
     NavHost(
@@ -31,7 +30,7 @@ fun SetupNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Login.route) {
-            val authViewModel: AuthViewModel = viewModel()
+            val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
             LoginScreen(
                 onNavigateToRegister = {
                     authViewModel.clearErrors()
@@ -46,7 +45,7 @@ fun SetupNavGraph(navController: NavHostController) {
         }
 
         composable(route = Screen.Register.route) {
-            val authViewModel: AuthViewModel = viewModel()
+            val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
             RegisterScreen(
                 onNavigateToHome = {
                     navController.navigate(Screen.Main.route) {

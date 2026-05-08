@@ -25,6 +25,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -319,7 +320,7 @@ fun TreeSelectionRow(
             Surface(
                 onClick = { changeSelectedTree(tree) },
                 enabled = !isTimerRunning,
-                modifier = Modifier.size(96.dp), // 1. Noticeably bigger size!
+                modifier = Modifier.size(96.dp).alpha(if (isTimerRunning && !isSelected) 0.5f else 1f), // 1. Noticeably bigger size!
                 shape = RoundedCornerShape(24.dp), // 2. Smooth, modern rounded corners
 
                 // 3. Background Color: Use your app's primary color when selected, soft grey when not

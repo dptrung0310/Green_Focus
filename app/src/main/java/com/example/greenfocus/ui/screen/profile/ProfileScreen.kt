@@ -1,112 +1,256 @@
 package com.example.greenfocus.ui.screen.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.greenfocus.ui.screen.auth.AuthTreeLogo
-import com.example.greenfocus.ui.theme.AuthBackground
-import com.example.greenfocus.ui.theme.AuthGreenDark
-import com.example.greenfocus.ui.theme.AuthGreenLight
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.greenfocus.ui.theme.*
 
 @Composable
 fun ProfileScreen(
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    viewModel: ProfileViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    val bgGradient = Brush.linearGradient(
+        colors = listOf(AuthGreenLight, AuthGreenDark)
+    )
+
+    if (uiState.isLoading) {
+        Box(modifier = Modifier.fillMaxSize().background(AuthBackground), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = AuthGreenLight)
+        }
+        return
+    }
+
+    val user = uiState.user
+    if (user == null) {
+        Box(modifier = Modifier.fillMaxSize().background(AuthBackground), contentAlignment = Alignment.Center) {
+            Text("Lỗi: ${uiState.errorMessage}")
+        }
+        return
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AuthBackground)
-            .padding(24.dp)
-            .statusBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .verticalScroll(rememberScrollState())
+            .padding(bottom = 80.dp) // Tránh đè bottom nav
     ) {
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Avatar / Logo
-        AuthTreeLogo(modifier = Modifier.size(96.dp))
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Người dùng GreenFocus",
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold,
-                color = AuthGreenDark
-            )
-        )
-        Text(
-            text = "Hãy tập trung để rừng xanh nở rộ!",
-            color = Color.Gray,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(top = 4.dp, bottom = 40.dp)
-        )
-
-        // Stats Row
-        Row(
+        // Header with gradient
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Color.White)
-                .padding(20.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .background(bgGradient)
+                .padding(top = 48.dp, bottom = 48.dp, start = 24.dp, end = 24.dp)
         ) {
-            StatItem(value = "0", label = "Cây đã trồng")
-            VerticalDivider()
-            StatItem(value = "0 h", label = "Tổng tập trung")
-            VerticalDivider()
-            StatItem(value = "0", label = "Chuỗi ngày")
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Profile", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    IconButton(
+                        onClick = { /* Settings */ },
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Profile Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Color.White.copy(alpha = 0.1f))
+                        .border(1.dp, Color.White.copy(alpha = 0.2f), RoundedCornerShape(24.dp))
+                        .padding(24.dp)
+                ) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Avatar
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .shadow(8.dp, CircleShape)
+                                    .clip(CircleShape)
+                                    .background(Brush.linearGradient(listOf(Color(0xFFFFD54F), Color(0xFFFFA726)))),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("😊", fontSize = 36.sp)
+                            }
+
+                            Spacer(modifier = Modifier.width(16.dp))
+
+                            Column {
+                                Text(user.displayName, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text(user.email, color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                                
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                Row(
+                                    modifier = Modifier
+                                        .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("Level ${user.level}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // XP Progress
+                        val xpNeeded = user.level * 500
+                        val xpPercent = if (xpNeeded > 0) user.experience.toFloat() / xpNeeded else 0f
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("${user.experience} / $xpNeeded XP", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                            Text("${(xpPercent * 100).toInt()}%", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        LinearProgressIndicator(
+                            progress = { xpPercent },
+                            modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                            color = Color(0xFFFFD54F),
+                            trackColor = Color.White.copy(alpha = 0.2f)
+                        )
+                    }
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Logout Button
-        OutlinedButton(
-            onClick = onLogout,
+        // Stats Grid
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-            border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.Red.copy(alpha = 0.6f))
+                .offset(y = (-24).dp)
+                .padding(horizontal = 24.dp)
         ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                contentDescription = "Đăng xuất",
-                modifier = Modifier.padding(end = 8.dp)
-            )
-            Text("Đăng xuất", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    icon = "🏆", iconColor = Color(0xFFFFD54F), iconBg = Color(0xFFFFD54F).copy(alpha = 0.2f),
+                    value = user.coins.toString(), label = "Coins Earned"
+                )
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    icon = "🎯", iconColor = AuthGreenLight, iconBg = AuthGreenLight.copy(alpha = 0.2f),
+                    value = user.totalTreesPlanted.toString(), label = "Trees Planted"
+                )
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                val hours = user.totalFocusTime / 3600
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    icon = "⚡", iconColor = AuthGreenDark, iconBg = AuthGreenDark.copy(alpha = 0.2f),
+                    value = "${hours}h", label = "Total Time"
+                )
+                StatCard(
+                    modifier = Modifier.weight(1f),
+                    icon = "🔓", iconColor = Color(0xFF42A5F5), iconBg = Color(0xFF42A5F5).copy(alpha = 0.2f),
+                    value = user.unlockedTreeIds.size.toString(), label = "Trees Unlocked"
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        // Settings / Logout 
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(4.dp, RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White)
+            ) {
+                Column {
+                    TextButton(
+                        onClick = { /* Settings */ },
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = Color.Gray)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Settings", color = Color.DarkGray, fontSize = 16.sp)
+                        }
+                    }
+                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), thickness = 1.dp)
+                    TextButton(
+                        onClick = onLogout,
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        contentPadding = PaddingValues(16.dp)
+                    ) {
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.Red)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Text("Log Out", color = Color.Red, fontSize = 16.sp)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun StatItem(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontWeight = FontWeight.Bold, fontSize = 20.sp, color = AuthGreenLight)
-        Text(label, fontSize = 11.sp, color = Color.Gray)
-    }
-}
-
-@Composable
-private fun VerticalDivider() {
+fun StatCard(modifier: Modifier = Modifier, icon: String, iconColor: Color, iconBg: Color, value: String, label: String) {
     Box(
-        modifier = Modifier
-            .height(40.dp)
-            .width(1.dp)
-            .background(Color.LightGray)
-    )
+        modifier = modifier
+            .shadow(4.dp, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(iconBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(icon, fontSize = 20.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+            Text(label, fontSize = 12.sp, color = Color.Gray)
+        }
+    }
 }

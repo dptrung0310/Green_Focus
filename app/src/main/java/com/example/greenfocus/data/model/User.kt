@@ -7,6 +7,7 @@ data class User(
     val avatarUrl: String = "",
     val coins: Int = 0,
     val level: Int = 1,
+    val experience: Int = 0,
     val totalFocusTime: Long = 0, // Tính theo giây
     val totalTreesPlanted: Int = 0, // Để làm Bảng xếp hạng
     val unlockedTreeIds: List<String> = listOf("default_oak"),

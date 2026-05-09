@@ -18,9 +18,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -43,9 +40,7 @@ import com.example.greenfocus.ui.theme.GreenFocusTheme
 import com.example.greenfocus.R
 import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.TreeType
-
-// Sample data class for the tree list
-data class TreeItem(val id: Int, val drawableRes: Int)
+import com.example.greenfocus.ui.components.CoinContainer
 
 @Composable
 fun PomodoroScreen(
@@ -77,13 +72,14 @@ fun PomodoroScreen(
         // 1. Username Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = "Xin chào X",
                 style = MaterialTheme.typography.headlineSmall
             )
+            CoinContainer(coins = pomodoroUiState.userMoneyAmount)
         }
 
         // 2. Timer with Circular Progress, Image, and Countdown

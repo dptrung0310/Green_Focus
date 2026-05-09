@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.data.model.TreeType
+import com.example.greenfocus.data.repository.UserRepository
 import com.example.greenfocus.util.SessionState
 import com.example.greenfocus.util.TimerForegroundService
 import com.example.greenfocus.util.TimerManager
@@ -22,7 +23,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class PomodoroViewModel(
-    private val timerManager: TimerManager
+    private val timerManager: TimerManager,
+    private val userRepository: UserRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PomodoroUiState())
     var pomodoroUiState : StateFlow<PomodoroUiState> = _uiState.asStateFlow()
@@ -30,6 +32,7 @@ class PomodoroViewModel(
     init {
         // As soon as the ViewModel is created, start listening to the TimerManager
         observeTimer()
+        observeUserState()
     }
 
     private fun observeTimer() {
@@ -63,6 +66,15 @@ class PomodoroViewModel(
                         // Do nothing for INIT or RUNNING
                     }
                 }
+            }
+        }
+    }
+
+    private fun observeUserState() {
+        viewModelScope.launch {
+            userRepository.getCurrentUserProfileFlow().collect {
+                userState ->
+                _uiState.update { it.copy(userMoneyAmount = userState?.coins ?: 0 ) }
             }
         }
     }
@@ -137,7 +149,8 @@ class PomodoroViewModel(
             initializer {
                 val application = (this[APPLICATION_KEY] as GreenFocusApp)
                 val timerManager = application.container.timerManager
-                PomodoroViewModel(timerManager = timerManager)
+                val userRepository = application.container.userRepository
+                PomodoroViewModel(timerManager = timerManager, userRepository = userRepository)
             }
         }
     }

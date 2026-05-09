@@ -26,6 +26,6 @@ class DefaultAppContainer : AppContainer {
         ProdUserRepository()
     }
     override val timerManager: TimerManager by lazy {
-        TimerManager(dataRepository)
+        TimerManager(dataRepository, userRepository)
     }
 }

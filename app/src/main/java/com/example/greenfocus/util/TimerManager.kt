@@ -3,6 +3,7 @@ package com.example.greenfocus.util
 import android.util.Log
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.data.repository.DataRepository
+import com.example.greenfocus.data.repository.UserRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -29,10 +30,10 @@ data class TimerState(
 )
 
 class TimerManager(
-    private var dataRepository: DataRepository
+    private var dataRepository: DataRepository,
+    private var userRepository: UserRepository
 ) {
     private var timerJob: Job? = null
-    private lateinit var currentSession: FocusSession
 
     private val _timerState = MutableStateFlow(TimerState())
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
@@ -52,7 +53,7 @@ class TimerManager(
                     _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
                 }
             }
-            timerFinished()
+            timerFinished(scope)
         }
     }
 
@@ -68,14 +69,19 @@ class TimerManager(
     fun setTimer(minutes: Int) {
         _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes, sessionState = SessionState.INIT) }
     }
-    fun timerFinished() {
+    fun timerFinished(scope: CoroutineScope) {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
         dataRepository.addSession(FocusSession(
             treeId = _timerState.value.treeId,
             startTime = System.currentTimeMillis(),
-            durationMinutes = _timerState.value.totalTime, // The time they successfully completed
+            durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
             status = "ALIVE"
         ))
+        scope.launch { try {
+            userRepository.addCoins(timerState.value.totalTime / 60)
+        } catch (_: Exception) {
+            Log.d("USER_REPO", "Timer finished, but error updating coins value")
+        } }
         Log.d("SESSION_REPO_TIMER", "Timer finished normally");
     }
 
@@ -84,7 +90,7 @@ class TimerManager(
         dataRepository.addSession(FocusSession(
             treeId = _timerState.value.treeId,
             startTime = System.currentTimeMillis(),
-            durationMinutes = _timerState.value.totalTime, // The time they successfully completed
+            durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
             status = "DEAD"
         ))
         Log.d("SESSION_REPO_TIMER", "Timer stopped mid-way");

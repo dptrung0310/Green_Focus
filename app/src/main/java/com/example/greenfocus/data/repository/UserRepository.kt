@@ -19,10 +19,11 @@ sealed class PurchaseResult {
 }
 
 interface UserRepository {
-    suspend fun getUserProfile(uid: String): User?
-    fun getUserProfileFlow(uid: String): Flow<User?>
+    suspend fun getCurrentUserProfile(): User?
+    fun getCurrentUserProfileFlow(): Flow<User?>
     suspend fun updateUser(user: User): Boolean
-    suspend fun addExperience(uid: String, xpToAdd: Int): Boolean
+    suspend fun addExperience(xpToAdd: Int): Boolean
+    suspend fun addCoins(amount: Int): Boolean
     suspend fun purchaseTree(uid: String, treeId: String, price: Int): PurchaseResult
 }
 
@@ -30,7 +31,8 @@ class ProdUserRepository : UserRepository {
     private val db = FirebaseModule.firestore
     private val usersCollection = db.collection(FirestoreCollections.USERS)
 
-    override suspend fun getUserProfile(uid: String): User? {
+    override suspend fun getCurrentUserProfile(): User? {
+        val uid = FirebaseModule.auth.currentUser?.uid ?: return null
         return try {
             val document = usersCollection.document(uid).get().await()
             if (document.exists()) {
@@ -42,7 +44,14 @@ class ProdUserRepository : UserRepository {
         }
     }
 
-    override fun getUserProfileFlow(uid: String): Flow<User?> = callbackFlow {
+    override fun getCurrentUserProfileFlow(): Flow<User?> = callbackFlow {
+        val uid = FirebaseModule.auth.currentUser?.uid
+        if (uid == null) {
+            trySend(null)
+            close()
+            return@callbackFlow
+        }
+
         val listenerRegistration = usersCollection.document(uid)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -74,7 +83,8 @@ class ProdUserRepository : UserRepository {
         }
     }
 
-    override suspend fun addExperience(uid: String, xpToAdd: Int): Boolean {
+    override suspend fun addExperience(xpToAdd: Int): Boolean {
+        val uid = FirebaseModule.auth.currentUser?.uid ?: return false
         return try {
             val userRef = usersCollection.document(uid)
             db.runTransaction { transaction ->
@@ -140,4 +150,16 @@ class ProdUserRepository : UserRepository {
             PurchaseResult.Error(e.message ?: "Unknown error")
         }
     }
+
+    override suspend fun addCoins(amount: Int): Boolean {
+        val uid = FirebaseModule.auth.currentUser?.uid ?: return false
+        return try {
+            usersCollection.document(uid).update("coins", FieldValue.increment(amount.toLong())).await()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
 }

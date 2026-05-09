@@ -23,20 +23,10 @@ class ProfileViewModel(
     }
 
     private fun loadUserProfile() {
-        val currentUser = FirebaseModule.auth.currentUser
-        if (currentUser == null) {
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                errorMessage = "Chưa đăng nhập"
-            )
-            return
-        }
-
         _uiState.value = _uiState.value.copy(isLoading = true)
 
         viewModelScope.launch {
-            // Lắng nghe thay đổi real-time
-            repository.getUserProfileFlow(currentUser.uid).collect { user ->
+            repository.getCurrentUserProfileFlow().collect { user ->
                 if (user != null) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -46,7 +36,7 @@ class ProfileViewModel(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = "Không tìm thấy dữ liệu người dùng"
+                        errorMessage = "Chưa đăng nhập hoặc không tìm thấy dữ liệu"
                     )
                 }
             }

@@ -57,7 +57,7 @@ class StoreViewModel(
                 val allTrees = forestRepository.getAllTrees()
 
                 // Lắng nghe user profile realtime (coins + unlockedTreeIds thay đổi sau mua)
-                userRepository.getUserProfileFlow(currentUid).collect { user ->
+                userRepository.getCurrentUserProfileFlow().collect { user ->
                     val unlockedIds = user?.unlockedTreeIds ?: emptyList()
 
                     // Map TreeType → StoreTreeItem với đúng status

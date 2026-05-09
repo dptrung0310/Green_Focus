@@ -23,7 +23,7 @@ import com.example.greenfocus.ui.theme.AuthGreenLight
 
 @Composable
 fun LoginScreen(
-    viewModel: AuthViewModel = viewModel(),
+    viewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory),
     onNavigateToHome: () -> Unit,
     onNavigateToRegister: () -> Unit
 ) {

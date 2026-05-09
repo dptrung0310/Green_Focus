@@ -4,14 +4,15 @@ import android.util.Log
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 
 interface DataRepository {
 
     fun addSession(session: FocusSession)
-    suspend fun getSessions(): List<FocusSession>
+    fun getSessions(): Flow<List<FocusSession>>
 }
 
 class ProdDataRepository : DataRepository{
@@ -34,22 +35,36 @@ class ProdDataRepository : DataRepository{
             }
     }
 
-    override suspend fun getSessions(): List<FocusSession> {
+    override fun getSessions(): Flow<List<FocusSession>> = callbackFlow {
         val uid = currentUid
-        requireNotNull(uid) { "Cannot fetch sessions: User is not logged in." }
 
-        return try {
-            val snapshot = sessionDb.document(uid).collection("user_sessions")
-                .orderBy("startTime", Query.Direction.DESCENDING)
-                .get()
-                .await() // Pauses the coroutine until Firebase returns the data
+        if (uid == null) {
+            trySend(emptyList())
+            close(IllegalStateException("User is not logged in."))
+            return@callbackFlow
+        }
 
-            // Magically converts all the Firestore documents back into your Kotlin data class!
-            snapshot.toObjects(FocusSession::class.java)
+        // Path: sessions -> {uid} -> user_sessions
+        val listenerRegistration = sessionDb.collection(FirestoreCollections.SESSIONS)
+            .document(uid).collection("user_sessions")
+            .orderBy("startTime", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("ProdDataRepository", "Listen failed for sessions.", error)
+                    close(error)
+                    return@addSnapshotListener
+                }
 
-        } catch (e: Exception) {
-            Log.e("ProdDataRepository", "Error fetching sessions: ${e.message}")
-            emptyList()
+                if (snapshot != null) {
+                    val sessions = snapshot.toObjects(FocusSession::class.java)
+                    trySend(sessions)
+                } else {
+                    trySend(emptyList())
+                }
+            }
+
+        awaitClose {
+            listenerRegistration.remove()
         }
     }
 

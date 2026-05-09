@@ -28,35 +28,35 @@ fun StoreScreen() {
 
     val mockTrees = listOf(
         StoreTreeItem(
-            tree = TreeType(id = "1", name = R.string.tree_oak, description = "Classic", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "1", name = R.string.tree_oak, description = "Classic", imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.OWNED
         ),
         StoreTreeItem(
-            tree = TreeType(id = "2", name = R.string.tree_pine, description = "Evergreen focus", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "2", name = R.string.tree_pine, description = "Evergreen focus", imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.OWNED
         ),
         StoreTreeItem(
-            tree = TreeType(id = "3", name = R.string.tree_cherry, description = "Beautiful and calm", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "3", name = R.string.tree_cherry, description = "Beautiful and calm", imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.OWNED
         ),
         StoreTreeItem(
-            tree = TreeType(id = "4", name = R.string.tree_maple, description = "Autumn vibes", price = 500, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "4", name = R.string.tree_maple, description = "Autumn vibes", price = 500, imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "5", name = R.string.tree_palm, description = "Tropical paradise", price = 750, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "5", name = R.string.tree_palm, description = "Tropical paradise", price = 750, imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "6", name = R.string.tree_cactus, description = "Desert warrior", price = 1000, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "6", name = R.string.tree_cactus, description = "Desert warrior", price = 1000, imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "7", name = R.string.tree_bamboo, description = "Zen master", price = 1250, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "7", name = R.string.tree_bamboo, description = "Zen master", price = 1250, imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.BUYABLE
         ),
         StoreTreeItem(
-            tree = TreeType(id = "8", name = R.string.tree_sakura, description = "Legendary beauty", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
+            tree = TreeType(id = "8", name = R.string.tree_sakura, description = "Legendary beauty", imageStaticSeed = R.drawable.tree, imageStaticBig = R.drawable.tree),
             status = TreeStatus.LOCKED
         )
     )

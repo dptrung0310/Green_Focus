@@ -59,9 +59,11 @@ class PomodoroViewModel(
                     SessionState.FAILED -> {
                         onTimerFailed()
                     }
-                    SessionState.HALF_DONE -> {
-                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSmall)}
-                    }
+
+                    //TODO: Remove this if not needed
+//                    SessionState.HALF_DONE -> {
+//                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSmall)}
+//                    }
                     else -> {
                         // Do nothing for INIT or RUNNING
                     }

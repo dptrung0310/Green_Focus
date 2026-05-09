@@ -1,6 +1,7 @@
 package com.example.greenfocus.util
 
 import android.util.Log
+import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.data.repository.DataRepository
 import com.example.greenfocus.data.repository.UserRepository
@@ -26,7 +27,7 @@ data class TimerState(
     val currentTime: Int = 25 * 60,
     val totalTime: Int = 25 * 60,
     val sessionState: SessionState = SessionState.INIT,
-    val treeId: String = "oak"
+    val treeId: String = DataSource.plants[0].id
 )
 
 class TimerManager(
@@ -49,9 +50,11 @@ class TimerManager(
             while (_timerState.value.currentTime > 0) {
                 delay(1000L)
                 _timerState.update { it.copy(currentTime = it.currentTime - 1) }
-                if (_timerState.value.currentTime * 2 == _timerState.value.totalTime) {
-                    _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
-                }
+
+                //TODO: Remove this if not needed
+//                if (_timerState.value.currentTime * 2 == _timerState.value.totalTime) {
+//                    _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
+//                }
             }
             timerFinished(scope)
         }

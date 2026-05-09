@@ -13,6 +13,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.greenfocus.ui.components.BottomNavBar
 import com.example.greenfocus.ui.navigation.Screen
 import com.example.greenfocus.ui.screen.PlaceholderScreen
+import com.example.greenfocus.ui.screen.forest.ForestScreen
 import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
@@ -50,7 +51,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 PomodoroScreen()
             }
             composable(Screen.Forest.route) {
-                PlaceholderScreen(title = "Forest")
+                ForestScreen()
             }
             composable(Screen.Stats.route) {
                 PlaceholderScreen(title = "Stats")

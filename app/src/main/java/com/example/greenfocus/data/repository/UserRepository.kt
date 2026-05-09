@@ -3,17 +3,27 @@ package com.example.greenfocus.data.repository
 import com.example.greenfocus.data.model.User
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
+
+sealed class PurchaseResult {
+    object Success : PurchaseResult()
+    object InsufficientFunds : PurchaseResult()
+    object AlreadyOwned : PurchaseResult()
+    data class Error(val message: String) : PurchaseResult()
+}
+
 interface UserRepository {
     suspend fun getUserProfile(uid: String): User?
     fun getUserProfileFlow(uid: String): Flow<User?>
     suspend fun updateUser(user: User): Boolean
     suspend fun addExperience(uid: String, xpToAdd: Int): Boolean
+    suspend fun purchaseTree(uid: String, treeId: String, price: Int): PurchaseResult
 }
 
 class ProdUserRepository : UserRepository {
@@ -92,6 +102,42 @@ class ProdUserRepository : UserRepository {
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+
+    override suspend fun purchaseTree(uid: String, treeId: String, price: Int): PurchaseResult {
+        return try {
+            val userRef = usersCollection.document(uid)
+
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(userRef)
+                val user = snapshot.toObject(User::class.java)
+                    ?: return@runTransaction PurchaseResult.Error("User not found")
+
+                // Kiểm tra đã sở hữu chưa
+                if (user.unlockedTreeIds.contains(treeId)) {
+                    return@runTransaction PurchaseResult.AlreadyOwned
+                }
+
+                // Kiểm tra đủ coins chưa
+                if (user.coins < price) {
+                    return@runTransaction PurchaseResult.InsufficientFunds
+                }
+
+                // Atomic: trừ coins + thêm treeId
+                transaction.update(
+                    userRef,
+                    mapOf(
+                        "coins" to user.coins - price,
+                        "unlockedTreeIds" to FieldValue.arrayUnion(treeId)
+                    )
+                )
+                PurchaseResult.Success
+            }.await()
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            PurchaseResult.Error(e.message ?: "Unknown error")
         }
     }
 }

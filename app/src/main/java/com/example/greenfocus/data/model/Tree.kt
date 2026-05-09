@@ -13,14 +13,14 @@ enum class TreeStatus {
 
 data class TreeType(
     val id: String,
-    @StringRes val name: Int,
+    val name: String = "",
     val price: Int = 0,
     val description: String = "",
     val growthTimeMinutes: Int = 25,
     val lottieAnimation: String = "", // Tên file lottie trong thư mục assets
-    @DrawableRes val imageStaticSeed: Int,
-    @DrawableRes val imageStaticSmall: Int,
-    @DrawableRes val imageStaticBig: Int,
+    val imageStaticSeed: String = "",
+    val imageStaticSmall: String = "",
+    val imageStaticBig: String = "",
 )
 
 data class StoreTreeItem(

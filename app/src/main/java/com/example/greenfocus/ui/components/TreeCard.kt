@@ -2,6 +2,7 @@ package com.example.greenfocus.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -21,7 +22,11 @@ import com.example.greenfocus.data.model.TreeStatus
 import com.example.greenfocus.ui.theme.*
 
 @Composable
-fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
+fun TreeCard(
+    tree: StoreTreeItem,
+    modifier: Modifier = Modifier,
+    onBuyClicked: () -> Unit = {}
+) {
     val bgColor = when (tree.status) {
         TreeStatus.OWNED -> CardOwnedBackGround
         TreeStatus.LOCKED -> CardLockedBackGround
@@ -70,6 +75,13 @@ fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
                         TreeStatus.OWNED -> ButtonOwned
                         TreeStatus.BUYABLE -> BuyButton
                         TreeStatus.LOCKED -> TextMuted.copy(alpha = 0.5f)
+                    }
+                )
+                .then(
+                    if (tree.status == TreeStatus.BUYABLE) {
+                        Modifier.clickable { onBuyClicked() }
+                    } else {
+                        Modifier
                     }
                 )
                 .padding(vertical = 10.dp),

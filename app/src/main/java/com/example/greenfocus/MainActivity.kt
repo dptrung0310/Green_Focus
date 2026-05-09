@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.greenfocus.ui.theme.GreenFocusTheme
+import androidx.navigation.compose.rememberNavController
+import com.example.greenfocus.ui.navigation.SetupNavGraph
 import com.example.greenfocus.ui.screen.store.StoreScreen
 
 class MainActivity : ComponentActivity() {
@@ -17,7 +19,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GreenFocusTheme {
-
+                GreenFocusTheme {
+                    val navController = rememberNavController()
+                    SetupNavGraph(navController = navController)
+                }
             }
         }
     }

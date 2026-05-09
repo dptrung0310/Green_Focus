@@ -1,6 +1,5 @@
 package com.example.greenfocus.data.repository
 
-import android.content.Context
 import com.example.greenfocus.R
 import com.example.greenfocus.data.model.TreeResourceMapper
 import com.example.greenfocus.data.model.TreeType
@@ -17,7 +16,7 @@ interface ForestRepository {
 
 data class TreeDTO(
     @SerializedName("id") val id: String,
-    @SerializedName("name") val name: String,
+    @SerializedName("nameKey") val name: String,
     @SerializedName("price") val price: Int = 0,
     @SerializedName("description") val description: String = "",
     @SerializedName("growthTimeMinutes") val growthTimeMinutes: Int = 25,
@@ -28,7 +27,7 @@ data class TreeDTO(
 )
 
 class ProdForestRepository(
-    private val context: Context
+    private val context: android.content.Context
 ) : ForestRepository {
     private val db = FirebaseModule.firestore
 
@@ -54,14 +53,14 @@ class ProdForestRepository(
         return dtos.map { dto ->
             TreeType(
                 id = dto.id,
-                name = (nameKeyToStringRes[dto.name] ?: R.string.tree_oak).toString(),
+                name = (nameKeyToStringRes[dto.name] ?: R.string.tree_oak),
                 price = dto.price,
                 description = dto.description,
                 growthTimeMinutes = dto.growthTimeMinutes,
                 lottieAnimation = dto.lottieAnimation,
-                imageStaticSeed = TreeResourceMapper.getDrawableResId(dto.imageStaticSeed).toString(),
-                imageStaticSmall = TreeResourceMapper.getDrawableResId(dto.imageStaticSmall).toString(),
-                imageStaticBig = TreeResourceMapper.getDrawableResId(dto.imageStaticBig).toString(),
+                imageStaticSeed = TreeResourceMapper.getDrawableResId(dto.imageStaticSeed),
+                imageStaticSmall = TreeResourceMapper.getDrawableResId(dto.imageStaticSmall),
+                imageStaticBig = TreeResourceMapper.getDrawableResId(dto.imageStaticBig),
             )
         }
     }

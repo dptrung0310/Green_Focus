@@ -1,19 +1,24 @@
 package com.example.greenfocus.ui.screen.store
 
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.greenfocus.data.model.StoreTreeItem
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.model.TreeStatus
@@ -22,10 +27,121 @@ import com.example.greenfocus.ui.components.TreeCard
 import com.example.greenfocus.ui.theme.*
 
 import com.example.greenfocus.R
+import com.example.greenfocus.data.repository.PurchaseResult
+import com.example.greenfocus.ui.navigation.Screen
 
 @Composable
-fun StoreScreen() {
+private fun PurchaseConfirmDialog(
+    item: StoreTreeItem,
+    userCoins: Int,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = StoreBackGround,
+        title = {
+            Text(
+                text = "Confirm Purchase?",
+                fontWeight = FontWeight.Bold,
+                color = BannerGreen,
+                fontSize = 18.sp
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Buy ${stringResource(item.tree.name)} for ${item.tree.price} coins?",
+                    fontSize = 15.sp,
+                    color = TextMuted
+                )
 
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("💰", fontSize = 14.sp)
+                    Text(
+                        text = "Your balance: $userCoins coins",
+                        fontSize = 13.sp,
+                        color = TextMuted.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        },
+
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Buy", color = BannerGreen, fontWeight = FontWeight.Bold)
+            }
+        },
+
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = TextMuted)
+            }
+        }
+    )
+}
+
+@Composable
+private fun InsufficientFundsDialog(
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = StoreBackGround,
+        title = {
+            Text(
+                text = "Not Enough Coins",
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFFE57373),
+                fontSize = 18.sp
+            )
+        },
+        text = {
+            Text(
+                text = "Complete more focus sessions to earn more coins",
+                fontSize = 15.sp,
+                color = TextMuted
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Got it", color = BannerGreen, fontWeight = FontWeight.Bold)
+            }
+        }
+    )
+}
+
+@Composable
+fun StoreScreen(
+    viewModel: StoreViewModel,
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    if (uiState.showPurchaseConfirmDialog && uiState.pendingItem != null) {
+        PurchaseConfirmDialog(
+            item = uiState.pendingItem!!,
+            userCoins = uiState.userCoins,
+            onConfirm = { viewModel.onConfirmPurchase() },
+            onDismiss = { viewModel.onDismissDialog() }
+        )
+    }
+
+    if (uiState.showInsufficientFundsDialog) {
+        InsufficientFundsDialog(
+            onDismiss = { viewModel.onDismissDialog() }
+        )
+    }
+
+    uiState.errorMessage?.let { errorMsg ->
+        LaunchedEffect(errorMsg) {
+            viewModel.onErrorDismissed()
+        }
+    }
+
+    /**
     val mockTrees = listOf(
         StoreTreeItem(
             tree = TreeType(id = "1", name = R.string.tree_oak, description = "Classic", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
@@ -60,6 +176,7 @@ fun StoreScreen() {
             status = TreeStatus.LOCKED
         )
     )
+    **/
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -85,12 +202,15 @@ fun StoreScreen() {
                     }
 
                     //User total coins will be updated here
-                    CoinContainer(coins = 1250) //Mock data
+                    CoinContainer(coins = uiState.userCoins) //Mock data
                 }
             }
 
-            items(mockTrees) { item ->
-                TreeCard(tree = item)
+            items(uiState.trees) { item ->
+                TreeCard(
+                    tree = item,
+                    onBuyClicked = {viewModel.onBuyClicked(item)}
+                )
             }
 
             item(span = {GridItemSpan(2)}) {

@@ -7,18 +7,22 @@ import com.example.greenfocus.data.model.TreeStatus
 import com.example.greenfocus.data.repository.ForestRepository
 import com.example.greenfocus.data.repository.PurchaseResult
 import com.example.greenfocus.data.repository.UserRepository
-import com.example.greenfocus.di.FirebaseModule
+import android.content.Context
+import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.greenfocus.data.repository.ProdUserRepository
+import com.example.greenfocus.data.repository.ProdForestRepository
 
 class StoreViewModel(
     private val forestRepository: ForestRepository,
     private val userRepository: UserRepository,
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow(StoreUiState())
     val uiState: StateFlow<StoreUiState> = _uiState.asStateFlow()
 
@@ -28,6 +32,18 @@ class StoreViewModel(
         get() = FirebaseAuth.getInstance().currentUser?.uid
 
 
+    companion object {
+        fun factory(context: Context): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return StoreViewModel(
+                        forestRepository = ProdForestRepository(context.applicationContext), // thêm .applicationContext
+                        userRepository = ProdUserRepository()
+                    ) as T
+                }
+            }
+        }
+    }
     private fun loadData() {
         val currentUid = uid ?: run {
             _uiState.update { it.copy(errorMessage = "User not logged in") }
@@ -94,5 +110,33 @@ class StoreViewModel(
         val currentUid = uid ?: return
 
         _uiState.update { it.copy(showPurchaseConfirmDialog = false, isLoading = true) }
+
+        viewModelScope.launch {
+            val result = userRepository.purchaseTree(
+                uid = currentUid,
+                treeId = item.tree.id,
+                price = item.tree.price,
+            )
+
+            when (result) {
+                is PurchaseResult.Success -> {
+                    _uiState.update { it.copy(isLoading = false, pendingItem = null) }
+                }
+                is PurchaseResult.InsufficientFunds -> {
+                    _uiState.update { it.copy(isLoading = false, showInsufficientFundsDialog = true) }
+                }
+                is PurchaseResult.AlreadyOwned -> {
+                    _uiState.update { it.copy(isLoading = false, pendingItem = null) }
+                }
+                is PurchaseResult.Error -> {
+                    _uiState.update { it.copy(isLoading = false, errorMessage = result.message, pendingItem = null) }
+                }
+            }
+        }
+        pendingPurchaseItem = null
+    }
+
+    fun onErrorDismissed() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 }

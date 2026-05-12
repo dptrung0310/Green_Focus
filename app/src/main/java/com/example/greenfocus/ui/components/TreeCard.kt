@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.greenfocus.R
 import com.example.greenfocus.data.model.StoreTreeItem
 import com.example.greenfocus.data.model.TreeStatus
 import com.example.greenfocus.ui.theme.*
@@ -88,12 +90,12 @@ fun TreeCard(
             contentAlignment = Alignment.Center
         ) {
             when (tree.status) {
-                TreeStatus.OWNED -> Text("Owned ✓", color = BannerGreen, fontWeight = FontWeight.Bold)
+                TreeStatus.OWNED -> Text(stringResource(R.string.store_status_owned), color = BannerGreen, fontWeight = FontWeight.Bold)
                 TreeStatus.BUYABLE -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("💰 ", fontSize = 14.sp)
                     Text(tree.tree.price.toString(), fontWeight = FontWeight.Bold)
                 }
-                TreeStatus.LOCKED -> Text("Locked", color = Color.White, fontWeight = FontWeight.Bold)
+                TreeStatus.LOCKED -> Text(stringResource(R.string.store_status_locked), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }

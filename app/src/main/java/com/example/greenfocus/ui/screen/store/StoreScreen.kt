@@ -42,7 +42,7 @@ private fun PurchaseConfirmDialog(
         containerColor = StoreBackGround,
         title = {
             Text(
-                text = "Confirm Purchase?",
+                text = stringResource(R.string.store_confirm_title),
                 fontWeight = FontWeight.Bold,
                 color = BannerGreen,
                 fontSize = 18.sp
@@ -51,7 +51,8 @@ private fun PurchaseConfirmDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = "Buy ${stringResource(item.tree.name)} for ${item.tree.price} coins?",
+                    text = stringResource(R.string.store_confirm_message,
+                        stringResource(item.tree.name), item.tree.price),
                     fontSize = 15.sp,
                     color = TextMuted
                 )
@@ -62,7 +63,7 @@ private fun PurchaseConfirmDialog(
                 ) {
                     Text("💰", fontSize = 14.sp)
                     Text(
-                        text = "Your balance: $userCoins coins",
+                        text = stringResource(R.string.store_balance, userCoins),
                         fontSize = 13.sp,
                         color = TextMuted.copy(alpha = 0.7f)
                     )
@@ -72,13 +73,13 @@ private fun PurchaseConfirmDialog(
 
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Buy", color = BannerGreen, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.store_btn_buy), color = BannerGreen, fontWeight = FontWeight.Bold)
             }
         },
 
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextMuted)
+                Text(stringResource(R.string.dialog_cancel), color = TextMuted)
             }
         }
     )
@@ -93,7 +94,7 @@ private fun InsufficientFundsDialog(
         containerColor = StoreBackGround,
         title = {
             Text(
-                text = "Not Enough Coins",
+                text = stringResource(R.string.store_insufficient_title),
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFFE57373),
                 fontSize = 18.sp
@@ -101,14 +102,14 @@ private fun InsufficientFundsDialog(
         },
         text = {
             Text(
-                text = "Complete more focus sessions to earn more coins",
+                text = stringResource(R.string.store_insufficient_message),
                 fontSize = 15.sp,
                 color = TextMuted
             )
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Got it", color = BannerGreen, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.dialog_confirm), color = BannerGreen, fontWeight = FontWeight.Bold)
             }
         }
     )
@@ -141,43 +142,6 @@ fun StoreScreen(
         }
     }
 
-    /**
-    val mockTrees = listOf(
-        StoreTreeItem(
-            tree = TreeType(id = "1", name = R.string.tree_oak, description = "Classic", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.OWNED
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "2", name = R.string.tree_pine, description = "Evergreen focus", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.OWNED
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "3", name = R.string.tree_cherry, description = "Beautiful and calm", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.OWNED
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "4", name = R.string.tree_maple, description = "Autumn vibes", price = 500, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.BUYABLE
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "5", name = R.string.tree_palm, description = "Tropical paradise", price = 750, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.BUYABLE
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "6", name = R.string.tree_cactus, description = "Desert warrior", price = 1000, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.BUYABLE
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "7", name = R.string.tree_bamboo, description = "Zen master", price = 1250, imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.BUYABLE
-        ),
-        StoreTreeItem(
-            tree = TreeType(id = "8", name = R.string.tree_sakura, description = "Legendary beauty", imageStaticSeed = R.drawable.tree, imageStaticSmall = R.drawable.tree, imageStaticBig = R.drawable.tree),
-            status = TreeStatus.LOCKED
-        )
-    )
-    **/
-
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         modifier = Modifier
@@ -197,8 +161,8 @@ fun StoreScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column {
-                        Text("Seed Shop", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = BannerGreen)
-                        Text("Unlock new trees", fontSize = 16.sp, color = TextMuted)
+                        Text(stringResource(R.string.store_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = BannerGreen)
+                        Text(stringResource(R.string.store_subtitle), fontSize = 16.sp, color = TextMuted)
                     }
 
                     //User total coins will be updated here
@@ -225,9 +189,9 @@ fun StoreScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Earn More Coins", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.store_banner_title), color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text("Complete sessions to earn rewards", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                        Text(stringResource(R.string.store_banner_subtitle), color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                     }
 
                     Box(

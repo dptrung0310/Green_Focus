@@ -11,7 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -30,16 +32,29 @@ fun TreeCard(
     onBuyClicked: () -> Unit = {}
 ) {
     val bgColor = when (tree.status) {
-        TreeStatus.OWNED -> CardOwnedBackGround
-        TreeStatus.LOCKED -> CardLockedBackGround
-        TreeStatus.BUYABLE -> CardNormal
+        TreeStatus.BUYABLE -> SolidColor(CardNormal)
+
+        TreeStatus.OWNED -> Brush.linearGradient(
+            colors = listOf(
+                CardOwnedBackGround_Start,
+                CardOwnedBackGround_End,
+            )
+        )
+        TreeStatus.LOCKED -> SolidColor(CardNormal)
     }
+
+    val buyButton = Brush.linearGradient(
+        colors = listOf(
+            BuyButton_Start,
+            BuyButton_End
+        )
+    )
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(bgColor)
+            .background(brush = bgColor)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -72,11 +87,11 @@ fun TreeCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(
+                .background(brush =
                     when (tree.status) {
-                        TreeStatus.OWNED -> ButtonOwned
-                        TreeStatus.BUYABLE -> BuyButton
-                        TreeStatus.LOCKED -> TextMuted.copy(alpha = 0.5f)
+                        TreeStatus.OWNED -> SolidColor(ButtonOwned)
+                        TreeStatus.BUYABLE -> buyButton
+                        TreeStatus.LOCKED -> SolidColor(TextMuted.copy(alpha = 0.5f))
                     }
                 )
                 .then(

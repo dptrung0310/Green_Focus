@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -20,15 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.greenfocus.data.model.StoreTreeItem
-import com.example.greenfocus.data.model.TreeType
-import com.example.greenfocus.data.model.TreeStatus
 import com.example.greenfocus.ui.components.CoinContainer
 import com.example.greenfocus.ui.components.TreeCard
 import com.example.greenfocus.ui.theme.*
-
 import com.example.greenfocus.R
-import com.example.greenfocus.data.repository.PurchaseResult
-import com.example.greenfocus.ui.navigation.Screen
 
 @Composable
 private fun PurchaseConfirmDialog(
@@ -121,6 +117,13 @@ fun StoreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val gradientBanner = Brush.linearGradient(
+        colors = listOf(
+            BannerGreen_Start,
+            BannerGreen_End
+        )
+    )
+
     if (uiState.showPurchaseConfirmDialog && uiState.pendingItem != null) {
         PurchaseConfirmDialog(
             item = uiState.pendingItem!!,
@@ -183,7 +186,7 @@ fun StoreScreen(
                         .fillMaxWidth()
                         .padding(vertical = 24.dp)
                         .clip(RoundedCornerShape(20.dp))
-                        .background(BannerGreen)
+                        .background(gradientBanner)
                         .padding(20.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically

@@ -53,17 +53,21 @@ class TimerForegroundService : LifecycleService() {
         lifecycleScope.launch {
             timerManager.timerState.collect { state ->
                 if (state.currentTime <= 0) {
+                    playSound(Sound.WIN_BELL)
                     notificationManager.notify(FINISHED_NOTIFICATION_ID, buildFinishedNotification())
                     stopSelf()
                 }
             }
         }
+
+        //If DEEP MODE: Activate app usage detection
         if (!timerManager.timerState.value.isDeepModeEnabled) return
         lifecycleScope.launch {
             Log.d("TIMER_MANAGER", "getUsageStatsStream activated")
             getUsageStatsStream(usageStatsManager).collect { state ->
                 //TODO: Right now it will only allow for quitting and resuming to the app. Have to solve the app picker problem.
                 if (state != "com.example.greenfocus" && state != "com.google.android.apps.nexuslauncher") {
+                    playSound(Sound.LOSE)
                     timerManager.pauseTimer()
                     notificationManager.notify(FAILED_NOTIFICATION_ID, buildFailedNotification())
                     stopSelf()
@@ -76,13 +80,17 @@ class TimerForegroundService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
 
         when (intent?.action) {
-            "ACTION_START" -> timerManager.startTimer(lifecycleScope)
+            "ACTION_START" -> {
+                playSound(Sound.CLICK)
+                timerManager.startTimer(lifecycleScope)
+            }
             "ACTION_PAUSE" -> {
                 timerManager.pauseTimer()
                 // If paused, you might want to switch to a static text notification
 
             }
             "ACTION_STOP" -> {
+                playSound(Sound.LOSE)
                 timerManager.pauseTimer()
                 stopSelf()
             }
@@ -199,5 +207,9 @@ class TimerForegroundService : LifecycleService() {
             }
             delay(2500)
         }
+    }
+
+    private fun playSound(resId: Int) {
+        SoundManager.playSound(this, resId)
     }
 }

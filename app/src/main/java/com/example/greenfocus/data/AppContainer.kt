@@ -6,6 +6,7 @@ import com.example.greenfocus.data.repository.ProdAuthRepository
 import com.example.greenfocus.data.repository.ProdDataRepository
 import com.example.greenfocus.data.repository.ProdUserRepository
 import com.example.greenfocus.data.repository.UserRepository
+import com.example.greenfocus.util.SoundManager
 import com.example.greenfocus.util.TimerManager
 
 interface AppContainer {

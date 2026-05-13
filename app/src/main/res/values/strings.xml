@@ -6,6 +6,8 @@
     <string name="pomodoro_stop_button">DỪNG</string>
     <string name="rationale_dialog_title">Ứng dụng yêu cầu quyền</string>
     <string name="rationale_dialog_content">GreenFocus cần tạo Notification giúp người dùng theo dõi tiến độ đồng hồ. Nếu bạn không ngại việc bị làm phiền khi ngủ gật trong lúc bật đồng hồ tập trung, xin vui lòng cấp quyền thông báo cho ứng dụng.</string>
+    <string name="usage_stats_rationale_dialog_content">GreenFocus cần quyền xem hoạt động app giúp người dùng theo dõi tiến độ đồng hồ. Nếu bạn không ngại việc bị làm phiền khi ngủ gật trong lúc bật đồng hồ tập trung, xin vui lòng cấp quyền theo dõi hoạt động app cho ứng dụng.</string>
+
     <string name="dialog_confirm">OK</string>
     <string name="dialog_cancel">Hủy</string>
     <string name="dialog_dismiss">Từ chối</string>

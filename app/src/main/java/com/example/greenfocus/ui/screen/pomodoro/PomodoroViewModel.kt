@@ -1,8 +1,11 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
+import android.app.usage.UsageEvents
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.example.greenfocus.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -82,26 +85,31 @@ class PomodoroViewModel(
     }
 
     fun toggleTimeDialog() {
-        _uiState.update { currentState -> currentState.copy(showTimeDialog = !currentState.showTimeDialog)}
+        _uiState.update { it.copy(showTimeDialog = !it.showTimeDialog)}
     }
     fun toggleRationaleDialog() {
-        _uiState.update { currentState -> currentState.copy(showRationaleDialog = !currentState.showRationaleDialog)}
+        _uiState.update { it.copy(showRationaleDialog = !it.showRationaleDialog)}
+    }
+    fun toggleUsageStatsRationaleDialog() {
+        _uiState.update { it.copy(showUsageStatsRationaleDialog = !it.showUsageStatsRationaleDialog)}
+
     }
     fun updateTimeDialogValue(value: String) {
-        _uiState.update { currentState -> currentState.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
+        _uiState.update { it.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
     }
 
     fun updateSelectedTree(value: TreeType) {
         timerManager.setTreeId(value.id)
-        _uiState.update { currentState -> currentState.copy(selectedTree = value) }
+        _uiState.update { it.copy(selectedTree = value) }
         updateSelectedTreeImage(value.imageStaticSeed)
     }
 
     fun updateSelectedTreeImage(value: Int) {
-        _uiState.update { currentState -> currentState.copy(selectedTreeImage = value) }
+        _uiState.update { it.copy(selectedTreeImage = value) }
     }
     fun toggleDeepFocus() {
-        _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
+        _uiState.update { it.copy(isDeepFocusEnabled = !it.isDeepFocusEnabled)}
+        timerManager.toggleDeepMode()
     }
 
     fun setTimer() {
@@ -127,7 +135,6 @@ class PomodoroViewModel(
         }
         context.startService(intent)
     }
-
 
     private fun onTimerFailed() {
         _uiState.update { it.copy(selectedTreeImage = R.drawable.dead_tree)}

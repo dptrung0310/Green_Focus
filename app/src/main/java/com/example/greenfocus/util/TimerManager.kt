@@ -24,6 +24,7 @@ enum class SessionState {
 
 data class TimerState(
     val isTimerRunning: Boolean = false,
+    val isDeepModeEnabled: Boolean = false,
     val currentTime: Int = 25 * 60,
     val totalTime: Int = 25 * 60,
     val sessionState: SessionState = SessionState.INIT,
@@ -65,7 +66,9 @@ class TimerManager(
         _timerState.update { it.copy(isTimerRunning = false) }
         timerCancelled()
     }
-
+    fun toggleDeepMode() {
+        _timerState.update { it.copy(isDeepModeEnabled = !it.isDeepModeEnabled) }
+    }
     fun setTreeId(newTreeId: String) {
         _timerState.update { it.copy(treeId = newTreeId) }
     }

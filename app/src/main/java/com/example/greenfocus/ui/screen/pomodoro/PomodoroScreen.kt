@@ -2,12 +2,18 @@ package com.example.greenfocus.ui.screen.pomodoro
 
 import android.Manifest
 import android.app.Activity
+import android.app.AppOpsManager
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Process
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -99,7 +105,22 @@ fun PomodoroScreen(
                 .toggleable(
                     value = pomodoroUiState.isDeepFocusEnabled,
                     enabled = !pomodoroUiState.isTimerRunning,
-                    onValueChange = { pomodoroViewModel.toggleDeepFocus() },
+                    onValueChange = {
+                        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                        val mode = appOps.checkOpNoThrow(
+                            AppOpsManager.OPSTR_GET_USAGE_STATS,
+                            Process.myUid(),
+                            context.packageName
+                        )
+                        // SCENARIO 1: Green Light
+                        if (mode == AppOpsManager.MODE_ALLOWED) {
+                            pomodoroViewModel.toggleDeepFocus()
+                        }
+                        // SCENARIO 2: First Time Ask
+                        else {
+                            pomodoroViewModel.toggleUsageStatsRationaleDialog()
+                        }
+                        },
                     role = Role.Switch
                 ),
             verticalAlignment = Alignment.CenterVertically,
@@ -185,6 +206,12 @@ fun PomodoroScreen(
         RationaleDialog(
             onDismiss = { pomodoroViewModel.toggleRationaleDialog() },
             permissionLauncher = permissionLauncher
+        )
+    }
+    if (pomodoroUiState.showUsageStatsRationaleDialog) {
+        UsageStatsRationaleDialog(
+            onDismiss = { pomodoroViewModel.toggleUsageStatsRationaleDialog() },
+            context = context
         )
     }
 }
@@ -358,6 +385,27 @@ fun RationaleDialog(
         confirmButton = {
             TextButton(onClick = {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                onDismiss()
+            }) { Text(stringResource(R.string.dialog_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.dialog_dismiss)) }
+        }
+    )
+}
+
+@Composable
+fun UsageStatsRationaleDialog(
+    onDismiss: () -> Unit,
+    context: Context
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(stringResource(R.string.rationale_dialog_title)) },
+        text = { Text(stringResource(R.string.usage_stats_rationale_dialog_content)) },
+        confirmButton = {
+            TextButton(onClick = {
+                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                 onDismiss()
             }) { Text(stringResource(R.string.dialog_confirm)) }
         },

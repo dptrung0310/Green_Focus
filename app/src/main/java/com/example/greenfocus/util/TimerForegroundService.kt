@@ -33,11 +33,13 @@ class TimerForegroundService : LifecycleService() {
     private lateinit var notificationManager: NotificationManager
 
     private lateinit var usageStatsManager: UsageStatsManager
+    private lateinit var soundManager: SoundManager
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
         timerManager = (application as GreenFocusApp).container.timerManager
+        soundManager = (application as GreenFocusApp).container.soundManager
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
 
@@ -210,6 +212,6 @@ class TimerForegroundService : LifecycleService() {
     }
 
     private fun playSound(resId: Int) {
-        SoundManager.playSound(this, resId)
+        soundManager.playSound(resId)
     }
 }

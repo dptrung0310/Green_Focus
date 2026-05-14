@@ -14,12 +14,15 @@ object Sound {
     val CLICK = R.raw.mixkit_modern_technology_select_3124
 }
 
-object SoundManager {
+class SoundManager(
+    private var context: Context
+) {
     /**
      * Plays a custom sound from the res/raw folder.
      * Example usage: soundManager.playSound(R.raw.timer_chime)
+     * NOTE: This requires a Context, so if you want to run it, pass it from Composable or a separate Service
      */
-    fun playSound(context: Context, soundResId: Int) {
+    fun playSound(soundResId: Int) {
         try {
             // Create a local variable, not a class-level one
             val localPlayer = MediaPlayer.create(context, soundResId)
@@ -36,7 +39,7 @@ object SoundManager {
      * Plays the user's default system notification sound.
      * Great fallback if you don't want to bundle an mp3.
      */
-    fun playSystemDefaultNotification(context: Context) {
+    fun playSystemDefaultNotification() {
         try {
             val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
             val ringtone = RingtoneManager.getRingtone(context, defaultSoundUri)

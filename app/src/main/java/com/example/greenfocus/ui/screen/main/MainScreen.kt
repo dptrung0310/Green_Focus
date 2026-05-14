@@ -5,11 +5,14 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.ui.components.BottomNavBar
 import com.example.greenfocus.ui.navigation.Screen
 import com.example.greenfocus.ui.screen.PlaceholderScreen
@@ -18,12 +21,14 @@ import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
+import com.example.greenfocus.util.Sound
 
 @Composable
 fun MainScreen(onLogout: () -> Unit) {
     val innerNavController = rememberNavController()
     val navBackStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
+    val soundManager = (LocalContext.current.applicationContext as GreenFocusApp).container.soundManager
 
     Scaffold(
         bottomBar = {
@@ -32,6 +37,7 @@ fun MainScreen(onLogout: () -> Unit) {
                 onNavigate = { route ->
                     innerNavController.navigate(route) {
                         // Tránh tạo nhiều bản sao của cùng một màn hình
+                        soundManager.playSound(Sound.CLICK)
                         popUpTo(innerNavController.graph.findStartDestination().id) {
                             saveState = true
                         }

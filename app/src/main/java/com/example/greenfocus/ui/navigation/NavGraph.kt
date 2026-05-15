@@ -1,5 +1,6 @@
 package com.example.greenfocus.ui.navigation
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -7,6 +8,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.ui.screen.auth.AuthViewModel
 import com.example.greenfocus.ui.screen.auth.LoginScreen
@@ -14,10 +16,14 @@ import com.example.greenfocus.ui.screen.auth.OpeningScreen
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
 import com.example.greenfocus.ui.screen.main.MainScreen
 import com.example.greenfocus.ui.screen.profile.SettingsScreen
+import com.example.greenfocus.util.TimerForegroundService
+import com.example.greenfocus.util.TimerManager
+import kotlinx.coroutines.delay
 
 @Composable
 fun SetupNavGraph(navController: NavHostController) {
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
+    val timerManager = (LocalContext.current.applicationContext as GreenFocusApp).container.timerManager
     NavHost(
         navController = navController,
         startDestination = "opening"
@@ -71,6 +77,19 @@ fun SetupNavGraph(navController: NavHostController) {
         composable(route = Screen.Main.route) {
             MainScreen(
                 onLogout = {
+                    // Stop running timer
+
+                    if (timerManager.timerState.value.isTimerRunning) {
+                        Log.d("NavGraph", "Stopping timer")
+                        timerManager.timerCancelled()
+                        val intent = Intent(context, TimerForegroundService::class.java).apply {
+                            action = "ACTION_STOP"
+                        }
+                        context.startService(intent)
+                        Log.d("NavGraph", "Timer stopped")
+                    }
+
+
                     FirebaseModule.auth.signOut()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }

@@ -54,7 +54,7 @@ fun PomodoroScreen(
     pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory)
 ) {
 
-    val context = LocalContext.current
+    val context = LocalContext.current.applicationContext
     val activity = context as? Activity
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -82,7 +82,7 @@ fun PomodoroScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Xin chào X",
+                text = stringResource(R.string.pomodoro_username, pomodoroUiState.currentUserName),
                 style = MaterialTheme.typography.headlineSmall
             )
             CoinContainer(coins = pomodoroUiState.userMoneyAmount)

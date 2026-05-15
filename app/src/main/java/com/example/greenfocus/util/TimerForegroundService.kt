@@ -85,14 +85,12 @@ class TimerForegroundService : LifecycleService() {
                 playSound(Sound.CLICK)
                 timerManager.startTimer(lifecycleScope)
             }
-            "ACTION_PAUSE" -> {
-                timerManager.pauseTimer()
-                // If paused, you might want to switch to a static text notification
 
-            }
             "ACTION_STOP" -> {
-                playSound(Sound.LOSE)
-                timerManager.pauseTimer()
+                if (timerManager.timerState.value.isTimerRunning) {
+                    playSound(Sound.LOSE)
+                    timerManager.pauseTimer()
+                }
                 stopSelf()
             }
         }

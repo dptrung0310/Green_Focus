@@ -79,7 +79,8 @@ class PomodoroViewModel(
         viewModelScope.launch {
             userRepository.getCurrentUserProfileFlow().collect {
                 userState ->
-                _uiState.update { it.copy(userMoneyAmount = userState?.coins ?: 0 ) }
+                _uiState.update { it.copy(userMoneyAmount = userState?.coins ?: 0,
+                                        currentUserName = userState?.displayName ?: "placeholder") }
             }
         }
     }

@@ -64,7 +64,6 @@ class TimerManager(
 
     fun pauseTimer() {
         timerJob?.cancel()
-        _timerState.update { it.copy(isTimerRunning = false) }
         timerCancelled()
     }
     fun toggleDeepMode() {

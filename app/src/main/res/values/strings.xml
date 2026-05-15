@@ -19,4 +19,18 @@
     <string name="tree_cactus">Xương Rồng</string>
     <string name="tree_bamboo">Cây Tre</string>
     <string name="tree_sakura">Hoa Anh Đào</string>
+
+    <!-- Store Screen -->
+    <string name="store_title">Seed Shop</string>
+    <string name="store_subtitle">Unlock new trees</string>
+    <string name="store_confirm_title">Confirm Purchase?</string>
+    <string name="store_confirm_message">Buy %1$s for %2$d coins?</string>
+    <string name="store_balance">Your balance: %1$d coins</string>
+    <string name="store_btn_buy">Buy</string>
+    <string name="store_insufficient_title">Not Enough Coins</string>
+    <string name="store_insufficient_message">Complete more focus sessions to earn more coins</string>
+    <string name="store_banner_title">Earn More Coins</string>
+    <string name="store_banner_subtitle">Complete sessions to earn rewards</string>
+    <string name="store_status_owned">Owned ✓</string>
+    <string name="store_status_locked">Locked</string>
 </resources>

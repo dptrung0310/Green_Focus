@@ -33,7 +33,6 @@ data class TreeType(
     val growthTimeMinutes: Int = 25,
     val lottieAnimation: String = "", // Tên file lottie trong thư mục assets
     @DrawableRes val imageStaticSeed: Int,
-    @DrawableRes val imageStaticSmall: Int,
     @DrawableRes val imageStaticBig: Int,
 )
 

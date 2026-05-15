@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    kotlin("plugin.serialization") version "2.3.20"
 }
 
 android {
@@ -60,7 +61,9 @@ dependencies {
     implementation(libs.androidx.camera.core)
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation(libs.androidx.lifecycle.service) // WorkManager
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0") // Kotlin Serialization for JSON
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

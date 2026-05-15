@@ -5,6 +5,7 @@ import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.data.repository.DataRepository
 import com.example.greenfocus.data.repository.UserRepository
+import com.example.greenfocus.data.repository.UserSettingRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -33,7 +34,7 @@ data class TimerState(
 
 class TimerManager(
     private var dataRepository: DataRepository,
-    private var userRepository: UserRepository
+    private var userRepository: UserRepository,
 ) {
     private var timerJob: Job? = null
 

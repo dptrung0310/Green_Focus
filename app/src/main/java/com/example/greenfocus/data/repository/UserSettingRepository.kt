@@ -18,12 +18,12 @@ interface UserSettingRepository {
     val userPreferences : Flow<UserPreferences>
     // We use suspend functions for writing because saving to disk takes time
     suspend fun setFinishSound(soundId: Int)
-    suspend fun setDeepModeAllowedApps(appList: List<String>)
+    suspend fun setDeepModeAllowedApps(appList: Set<String>)
 }
 
 data class UserPreferences(
     val currentFinishSound: Int = Sound.WIN_BELL,
-    val deepModeAllowedApps: List<String> = emptyList()
+    val deepModeAllowedApps: Set<String> = emptySet()
 )
 class ProdUserSettingRepository(
     private var dataStore: DataStore<Preferences>
@@ -46,7 +46,7 @@ class ProdUserSettingRepository(
         .map {
             preferences ->
                 val currentFinishSound = preferences[CURRENT_FINISH_SOUND] ?: Sound.WIN_BELL
-                val deepModeAllowedApps = preferences[DEEP_MODE_ALLOWED_APPS]?.let { Json.decodeFromString<List<String>>(it) } ?: emptyList()
+                val deepModeAllowedApps = preferences[DEEP_MODE_ALLOWED_APPS]?.let { Json.decodeFromString<Set<String>>(it) } ?: emptySet()
                 UserPreferences(currentFinishSound, deepModeAllowedApps)
         }
 
@@ -57,7 +57,7 @@ class ProdUserSettingRepository(
         }
     }
 
-    override suspend fun setDeepModeAllowedApps(appList: List<String>) {
+    override suspend fun setDeepModeAllowedApps(appList: Set<String>) {
         val appListAsJson = Json.encodeToString(appList)
         dataStore.edit {
             preferences -> preferences[DEEP_MODE_ALLOWED_APPS] = appListAsJson

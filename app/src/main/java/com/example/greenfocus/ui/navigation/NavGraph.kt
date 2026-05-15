@@ -1,6 +1,8 @@
 package com.example.greenfocus.ui.navigation
 
+import android.util.Log
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -11,8 +13,11 @@ import com.example.greenfocus.ui.screen.auth.LoginScreen
 import com.example.greenfocus.ui.screen.auth.OpeningScreen
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
 import com.example.greenfocus.ui.screen.main.MainScreen
+import com.example.greenfocus.ui.screen.profile.SettingsScreen
+
 @Composable
 fun SetupNavGraph(navController: NavHostController) {
+    val context = LocalContext.current
     NavHost(
         navController = navController,
         startDestination = "opening"
@@ -71,6 +76,18 @@ fun SetupNavGraph(navController: NavHostController) {
                         popUpTo(0) { inclusive = true }
                         launchSingleTop = true
                     }
+                },
+                onSettingNavigate = {
+                    Log.d("NavGraph", "Trying to navigate to settings")
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
+        }
+
+        composable(route = Screen.Settings.route) {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.navigate(Screen.Main.route)
                 }
             )
         }

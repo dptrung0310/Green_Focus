@@ -6,9 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.usage.UsageEvents
-import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -40,6 +38,7 @@ class TimerForegroundService : LifecycleService() {
         super.onCreate()
         timerManager = (application as GreenFocusApp).container.timerManager
         soundManager = (application as GreenFocusApp).container.soundManager
+
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
 

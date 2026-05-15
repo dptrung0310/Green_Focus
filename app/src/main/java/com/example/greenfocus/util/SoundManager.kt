@@ -17,6 +17,7 @@ object Sound {
 class SoundManager(
     private var context: Context
 ) {
+    private var stoppablePlayer: MediaPlayer? = null
     /**
      * Plays a custom sound from the res/raw folder.
      * Example usage: soundManager.playSound(R.raw.timer_chime)
@@ -33,6 +34,36 @@ class SoundManager(
         } catch (e: Exception) {
             Log.e("SoundManager", "Failed to play custom sound", e)
         }
+    }
+
+    /**
+     * Plays a custom sound from the res/raw folder. This time it stops any previous sound playing
+     * Example usage: soundManager.playSound(R.raw.timer_chime)
+     * NOTE: This requires a Context, so if you want to run it, pass it from Composable or a separate Service
+     */
+    fun playStoppableSound(soundResId: Int) {
+        stopSound()
+        try {
+            // Create a local variable, not a class-level one
+            stoppablePlayer = MediaPlayer.create(context, soundResId)
+            stoppablePlayer?.setOnCompletionListener { player ->
+                player.release()
+            }
+            stoppablePlayer?.start()
+        } catch (e: Exception) {
+            Log.e("SoundManager", "Failed to play custom sound", e)
+        }
+    }
+
+    fun stopSound() {
+        stoppablePlayer?.let { player ->
+            if (player.isPlaying) {
+                player.stop()
+            }
+            // Always release the player when you are done with it!
+            player.release()
+        }
+        stoppablePlayer = null
     }
 
     /**

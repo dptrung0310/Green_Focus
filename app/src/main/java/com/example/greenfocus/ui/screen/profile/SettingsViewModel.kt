@@ -12,12 +12,17 @@ import com.example.greenfocus.data.repository.UserPreferences
 import com.example.greenfocus.data.repository.UserSettingRepository
 import android.content.Context
 import android.content.Intent
+import android.util.Log
+import com.example.greenfocus.data.repository.DefaultSettings
 import com.example.greenfocus.util.Sound
 import com.example.greenfocus.util.SoundManager
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -37,18 +42,16 @@ data class SettingsUiState(
     val showUnsavedDialog: Boolean = false
 )
 
-object DefaultSettings {
-    val FINISH_SOUND = Sound.WIN_BELL
-    val DEEP_MODE_APPS = setOf(
-        "com.example.greenfocus",
-        "com.google.android.apps.nexuslauncher"
-    )
-}
 class SettingsViewModel(
     private val userSettingRepository: UserSettingRepository,
     private val soundManager: SoundManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
+    private val _userSettings = userSettingRepository.userPreferences.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = UserPreferences()
+    )
     private var _baseState = UserPreferences()
     val settingsUiState : StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -98,6 +101,11 @@ class SettingsViewModel(
         viewModelScope.launch {
             userSettingRepository.setFinishSound(currentDraft.currentFinishSound)
             userSettingRepository.setDeepModeAllowedApps(currentDraft.deepModeAllowedApps)
+
+            delay(1000)
+            Log.d("USER_SETTING_DATASTORE", "Current DataStore Value")
+            Log.d("USER_SETTING_DATASTORE", "Sound: " + _userSettings.value.currentFinishSound)
+            Log.d("USER_SETTING_DATASTORE", "Apps: " + _userSettings.value.deepModeAllowedApps)
         }
         _uiState.update { it.copy(isChanged = false) }
     }
@@ -120,7 +128,7 @@ class SettingsViewModel(
     }
 
     fun updateAllowedAppsDraft(appList: Set<String>) {
-        _uiState.update { it.copy(deepModeAllowedApps = appList) }
+        _uiState.update { it.copy(deepModeAllowedApps = appList + DefaultSettings.DEEP_MODE_APPS) }
         _uiState.update { it.copy(isChanged = checkForChanges()) }
     }
 

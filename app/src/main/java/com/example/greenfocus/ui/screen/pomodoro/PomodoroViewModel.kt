@@ -1,11 +1,8 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import com.example.greenfocus.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -48,8 +45,10 @@ class PomodoroViewModel(
                 _uiState.update { currentState ->
                     currentState.copy(
                         isTimerRunning = timerState.isTimerRunning,
+                        isDeepFocusEnabled = timerState.isDeepModeEnabled,
                         currentPercentage = progress,
                         formattedTime = formatTime(timerState.currentTime),
+                        selectedTree = timerState.currentTree
                     )
                 }
                 when (timerState.sessionState) {
@@ -100,7 +99,7 @@ class PomodoroViewModel(
     }
 
     fun updateSelectedTree(value: TreeType) {
-        timerManager.setTreeId(value.id)
+        timerManager.setTree(value)
         _uiState.update { it.copy(selectedTree = value) }
         updateSelectedTreeImage(value.imageStaticSeed)
     }

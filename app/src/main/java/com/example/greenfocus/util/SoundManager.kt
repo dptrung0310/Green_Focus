@@ -48,6 +48,9 @@ class SoundManager(
             stoppablePlayer = MediaPlayer.create(context, soundResId)
             stoppablePlayer?.setOnCompletionListener { player ->
                 player.release()
+                if (stoppablePlayer === player) {
+                    stoppablePlayer = null
+                }
             }
             stoppablePlayer?.start()
         } catch (e: Exception) {

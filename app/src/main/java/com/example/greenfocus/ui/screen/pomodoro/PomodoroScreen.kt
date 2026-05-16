@@ -54,7 +54,7 @@ fun PomodoroScreen(
     pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory)
 ) {
 
-    val context = LocalContext.current.applicationContext
+    val context = LocalContext.current
     val activity = context as? Activity
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
     val permissionLauncher = rememberLauncherForActivityResult(

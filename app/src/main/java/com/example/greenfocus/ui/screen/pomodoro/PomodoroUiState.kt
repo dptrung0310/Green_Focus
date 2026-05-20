@@ -7,6 +7,7 @@ import com.example.greenfocus.data.model.TreeType
 data class PomodoroUiState (
     val userMoneyAmount: Int = 0,
 
+    val currentUserName: String = "Placeholder",
     val isTimerRunning: Boolean = false,
     val isTimerFinished: Boolean = false,
     val formattedTime: String = "25:00",

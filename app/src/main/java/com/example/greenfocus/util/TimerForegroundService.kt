@@ -6,9 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.usage.UsageEvents
-import android.app.usage.UsageStats
 import android.app.usage.UsageStatsManager
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -18,6 +16,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.MainActivity
+import com.example.greenfocus.data.repository.UserSettingRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -31,7 +30,6 @@ class TimerForegroundService : LifecycleService() {
     private val FAILED_NOTIFICATION_ID = 3
     private lateinit var timerManager: TimerManager
     private lateinit var notificationManager: NotificationManager
-
     private lateinit var usageStatsManager: UsageStatsManager
     private lateinit var soundManager: SoundManager
 
@@ -40,13 +38,15 @@ class TimerForegroundService : LifecycleService() {
         super.onCreate()
         timerManager = (application as GreenFocusApp).container.timerManager
         soundManager = (application as GreenFocusApp).container.soundManager
+
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         usageStatsManager = getSystemService(USAGE_STATS_SERVICE) as UsageStatsManager
 
         createNotificationChannel()
 
+        val currentTimerConfigs = timerManager.timerState.value
         // 1. Calculate the exact finish time based on the repository's current state
-        val remainingSeconds = timerManager.timerState.value.currentTime
+        val remainingSeconds = currentTimerConfigs.currentTime
         val targetTimeMillis = System.currentTimeMillis() + (remainingSeconds * 1000L)
 
         // 2. Start the foreground service immediately with the Chronometer notification
@@ -55,7 +55,7 @@ class TimerForegroundService : LifecycleService() {
         lifecycleScope.launch {
             timerManager.timerState.collect { state ->
                 if (state.currentTime <= 0) {
-                    playSound(Sound.WIN_BELL)
+                    playSound(currentTimerConfigs.currentFinishSound)
                     notificationManager.notify(FINISHED_NOTIFICATION_ID, buildFinishedNotification())
                     stopSelf()
                 }
@@ -68,7 +68,9 @@ class TimerForegroundService : LifecycleService() {
             Log.d("TIMER_MANAGER", "getUsageStatsStream activated")
             getUsageStatsStream(usageStatsManager).collect { state ->
                 //TODO: Right now it will only allow for quitting and resuming to the app. Have to solve the app picker problem.
-                if (state != "com.example.greenfocus" && state != "com.google.android.apps.nexuslauncher") {
+                val appList = currentTimerConfigs.deepModeAllowedApps
+                Log.d("TIMER_MANAGER", "Valid app = " + appList.any { app -> state == app })
+                if (!appList.any { app -> state == app }) {
                     playSound(Sound.LOSE)
                     timerManager.pauseTimer()
                     notificationManager.notify(FAILED_NOTIFICATION_ID, buildFailedNotification())
@@ -86,14 +88,12 @@ class TimerForegroundService : LifecycleService() {
                 playSound(Sound.CLICK)
                 timerManager.startTimer(lifecycleScope)
             }
-            "ACTION_PAUSE" -> {
-                timerManager.pauseTimer()
-                // If paused, you might want to switch to a static text notification
 
-            }
             "ACTION_STOP" -> {
-                playSound(Sound.LOSE)
-                timerManager.pauseTimer()
+                if (timerManager.timerState.value.isTimerRunning) {
+                    playSound(Sound.LOSE)
+                    timerManager.pauseTimer()
+                }
                 stopSelf()
             }
         }
@@ -191,7 +191,7 @@ class TimerForegroundService : LifecycleService() {
     private fun getUsageStatsStream(usageStatsManager: UsageStatsManager) : Flow<String> = flow {
         while (true) {
             val endTime = System.currentTimeMillis()
-            val startTime = endTime - 3000
+            val startTime = endTime - 10000
             val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
             val event = UsageEvents.Event()
             var latestApp: String? = null

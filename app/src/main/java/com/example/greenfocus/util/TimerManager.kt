@@ -3,14 +3,20 @@ package com.example.greenfocus.util
 import android.util.Log
 import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.FocusSession
+import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.repository.DataRepository
+import com.example.greenfocus.data.repository.DefaultSettings
+import com.example.greenfocus.data.repository.UserPreferences
 import com.example.greenfocus.data.repository.UserRepository
+import com.example.greenfocus.data.repository.UserSettingRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -28,18 +34,37 @@ data class TimerState(
     val currentTime: Int = 25 * 60,
     val totalTime: Int = 25 * 60,
     val sessionState: SessionState = SessionState.INIT,
-    val treeId: String = DataSource.plants[0].id
+    val currentTree: TreeType = DataSource.plants[0],
+
+    val currentFinishSound: Int = DefaultSettings.FINISH_SOUND,
+    val deepModeAllowedApps: Set<String> = DefaultSettings.DEEP_MODE_APPS
 )
 
 class TimerManager(
     private var dataRepository: DataRepository,
-    private var userRepository: UserRepository
+    private var userRepository: UserRepository,
+    private var userSettingRepository: UserSettingRepository,
+    private var scope: CoroutineScope
 ) {
     private var timerJob: Job? = null
 
     private val _timerState = MutableStateFlow(TimerState())
+    private val _userSettings = userSettingRepository.userPreferences.stateIn(
+        scope = scope,
+        started = SharingStarted.WhileSubscribed(),
+        initialValue = UserPreferences()
+    )
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
 
+    init {
+        scope.launch {
+            _userSettings.collect { userSettings -> _timerState.update {
+                it.copy(currentFinishSound = userSettings.currentFinishSound,
+                        deepModeAllowedApps = userSettings.deepModeAllowedApps)
+                }
+            }
+        }
+    }
     fun startTimer(scope: CoroutineScope) {
 
         if (_timerState.value.isTimerRunning) return;
@@ -63,14 +88,13 @@ class TimerManager(
 
     fun pauseTimer() {
         timerJob?.cancel()
-        _timerState.update { it.copy(isTimerRunning = false) }
         timerCancelled()
     }
     fun toggleDeepMode() {
         _timerState.update { it.copy(isDeepModeEnabled = !it.isDeepModeEnabled) }
     }
-    fun setTreeId(newTreeId: String) {
-        _timerState.update { it.copy(treeId = newTreeId) }
+    fun setTree(newTree: TreeType) {
+        _timerState.update { it.copy(currentTree = newTree) }
     }
     fun setTimer(minutes: Int) {
         _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes, sessionState = SessionState.INIT) }
@@ -78,7 +102,7 @@ class TimerManager(
     fun timerFinished(scope: CoroutineScope) {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
         dataRepository.addSession(FocusSession(
-            treeId = _timerState.value.treeId,
+            treeId = _timerState.value.currentTree.id,
             startTime = System.currentTimeMillis(),
             durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
             status = "ALIVE"
@@ -94,7 +118,7 @@ class TimerManager(
     fun timerCancelled() {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.FAILED) }
         dataRepository.addSession(FocusSession(
-            treeId = _timerState.value.treeId,
+            treeId = _timerState.value.currentTree.id,
             startTime = System.currentTimeMillis(),
             durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
             status = "DEAD"

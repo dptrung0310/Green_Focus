@@ -82,7 +82,7 @@ fun PomodoroScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Xin chào X",
+                text = stringResource(R.string.pomodoro_username, pomodoroUiState.currentUserName),
                 style = MaterialTheme.typography.headlineSmall
             )
             CoinContainer(coins = pomodoroUiState.userMoneyAmount)

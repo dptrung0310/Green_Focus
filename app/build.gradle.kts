@@ -64,6 +64,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation(libs.androidx.lifecycle.service) // WorkManager
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0") // Kotlin Serialization for JSON
+    implementation("io.coil-kt:coil-compose:2.4.0") // Coil
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

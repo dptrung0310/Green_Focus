@@ -27,7 +27,10 @@ import com.example.greenfocus.ui.screen.store.StoreViewModel
 import com.example.greenfocus.util.Sound
 
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(
+    onLogout: () -> Unit,
+    onSettingNavigate: () -> Unit
+) {
     val innerNavController = rememberNavController()
     val navBackStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
@@ -76,7 +79,9 @@ fun MainScreen(onLogout: () -> Unit) {
                 SocialScreen()
             }
             composable(Screen.Profile.route) {
-                ProfileScreen(onLogout = onLogout)
+                ProfileScreen(
+                    onLogout = onLogout,
+                    onSettingNavigate = onSettingNavigate)
             }
         }
     }

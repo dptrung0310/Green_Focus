@@ -1,11 +1,8 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
-import android.app.usage.UsageEvents
-import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import com.example.greenfocus.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -16,6 +13,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.repository.UserRepository
+import com.example.greenfocus.data.repository.ForestRepository
 import com.example.greenfocus.util.SessionState
 import com.example.greenfocus.util.TimerForegroundService
 import com.example.greenfocus.util.TimerManager
@@ -27,10 +25,12 @@ import kotlinx.coroutines.launch
 
 class PomodoroViewModel(
     private val timerManager: TimerManager,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val forestRepository: ForestRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PomodoroUiState())
     var pomodoroUiState : StateFlow<PomodoroUiState> = _uiState.asStateFlow()
+    private var allTrees: List<TreeType> = emptyList()
 
     init {
         // As soon as the ViewModel is created, start listening to the TimerManager
@@ -48,8 +48,10 @@ class PomodoroViewModel(
                 _uiState.update { currentState ->
                     currentState.copy(
                         isTimerRunning = timerState.isTimerRunning,
+                        isDeepFocusEnabled = timerState.isDeepModeEnabled,
                         currentPercentage = progress,
                         formattedTime = formatTime(timerState.currentTime),
+                        selectedTree = timerState.currentTree
                     )
                 }
                 when (timerState.sessionState) {
@@ -77,9 +79,35 @@ class PomodoroViewModel(
 
     private fun observeUserState() {
         viewModelScope.launch {
-            userRepository.getCurrentUserProfileFlow().collect {
-                userState ->
-                _uiState.update { it.copy(userMoneyAmount = userState?.coins ?: 0 ) }
+            if (allTrees.isEmpty()) {
+                try {
+                    allTrees = forestRepository.getAllTrees()
+                } catch (e: Exception) {
+                    allTrees = listOf(TreeType.DEFAULT)
+                }
+            }
+
+            userRepository.getCurrentUserProfileFlow().collect { userState ->
+                val unlockedIds = userState?.unlockedTreeIds ?: listOf("default_oak")
+                val unlocked = allTrees.filter { it.id in unlockedIds }
+                
+                _uiState.update { currentState ->
+                    val finalUnlocked = if (unlocked.isEmpty()) listOf(TreeType.DEFAULT) else unlocked
+                    val isSelectedUnlocked = finalUnlocked.any { it.id == currentState.selectedTree.id }
+                    val currentSelectedTree = if (isSelectedUnlocked) {
+                        currentState.selectedTree
+                    } else {
+                        finalUnlocked.firstOrNull() ?: TreeType.DEFAULT
+                    }
+                    
+                    currentState.copy(
+                        userMoneyAmount = userState?.coins ?: 0,
+                        currentUserName = userState?.displayName ?: "placeholder",
+                        unlockedTrees = finalUnlocked,
+                        selectedTree = currentSelectedTree,
+                        selectedTreeImage = if (currentState.isTimerRunning) currentState.selectedTreeImage else currentSelectedTree.imageStaticSeed
+                    )
+                }
             }
         }
     }
@@ -99,7 +127,7 @@ class PomodoroViewModel(
     }
 
     fun updateSelectedTree(value: TreeType) {
-        timerManager.setTreeId(value.id)
+        timerManager.setTree(value)
         _uiState.update { it.copy(selectedTree = value) }
         updateSelectedTreeImage(value.imageStaticSeed)
     }
@@ -159,7 +187,12 @@ class PomodoroViewModel(
                 val application = (this[APPLICATION_KEY] as GreenFocusApp)
                 val timerManager = application.container.timerManager
                 val userRepository = application.container.userRepository
-                PomodoroViewModel(timerManager = timerManager, userRepository = userRepository)
+                val forestRepository = application.container.forestRepository
+                PomodoroViewModel(
+                    timerManager = timerManager,
+                    userRepository = userRepository,
+                    forestRepository = forestRepository
+                )
             }
         }
     }

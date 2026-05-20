@@ -21,10 +21,16 @@ import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.greenfocus.ui.screen.store.StoreViewModel
 import com.example.greenfocus.util.Sound
 
 @Composable
-fun MainScreen(onLogout: () -> Unit) {
+fun MainScreen(
+    onLogout: () -> Unit,
+    onSettingNavigate: () -> Unit
+) {
     val innerNavController = rememberNavController()
     val navBackStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
@@ -63,13 +69,19 @@ fun MainScreen(onLogout: () -> Unit) {
                 PlaceholderScreen(title = "Stats")
             }
             composable(Screen.Store.route) {
-                StoreScreen()
+                val context = LocalContext.current
+                val viewModel: StoreViewModel = viewModel(
+                    factory = StoreViewModel.factory(context)
+                )
+                StoreScreen(viewModel = viewModel)
             }
             composable(Screen.Social.route) {
                 SocialScreen()
             }
             composable(Screen.Profile.route) {
-                ProfileScreen(onLogout = onLogout)
+                ProfileScreen(
+                    onLogout = onLogout,
+                    onSettingNavigate = onSettingNavigate)
             }
         }
     }

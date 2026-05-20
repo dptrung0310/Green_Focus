@@ -44,7 +44,6 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.theme.GreenFocusTheme
 import com.example.greenfocus.R
-import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.ui.components.CoinContainer
 
@@ -82,7 +81,7 @@ fun PomodoroScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Xin chào X",
+                text = stringResource(R.string.pomodoro_username, pomodoroUiState.currentUserName),
                 style = MaterialTheme.typography.headlineSmall
             )
             CoinContainer(coins = pomodoroUiState.userMoneyAmount)
@@ -140,6 +139,7 @@ fun PomodoroScreen(
         TreeSelectionRow(
             isTimerRunning = pomodoroUiState.isTimerRunning,
             selectedTree = pomodoroUiState.selectedTree,
+            unlockedTrees = pomodoroUiState.unlockedTrees,
             changeSelectedTree = { pomodoroViewModel.updateSelectedTree(it) }
         )
 
@@ -329,6 +329,7 @@ fun TimerDialog(
 fun TreeSelectionRow(
     isTimerRunning: Boolean,
     selectedTree: TreeType,
+    unlockedTrees: List<TreeType>,
     changeSelectedTree: (TreeType) -> Unit
 ) {
     LazyRow(
@@ -336,7 +337,7 @@ fun TreeSelectionRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        items(DataSource.plants) { tree ->
+        items(unlockedTrees) { tree ->
             val isSelected = selectedTree.id == tree.id
 
             // Using Surface instead of IconButton for better background and shadow control

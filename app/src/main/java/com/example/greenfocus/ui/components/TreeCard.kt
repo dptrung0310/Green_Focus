@@ -2,37 +2,59 @@ package com.example.greenfocus.ui.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.greenfocus.R
 import com.example.greenfocus.data.model.StoreTreeItem
 import com.example.greenfocus.data.model.TreeStatus
 import com.example.greenfocus.ui.theme.*
 
 @Composable
-fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
+fun TreeCard(
+    tree: StoreTreeItem,
+    modifier: Modifier = Modifier,
+    onBuyClicked: () -> Unit = {}
+) {
     val bgColor = when (tree.status) {
-        TreeStatus.OWNED -> CardOwnedBackGround
-        TreeStatus.LOCKED -> CardLockedBackGround
-        TreeStatus.BUYABLE -> CardNormal
+        TreeStatus.BUYABLE -> SolidColor(CardNormal)
+
+        TreeStatus.OWNED -> Brush.linearGradient(
+            colors = listOf(
+                CardOwnedBackGround_Start,
+                CardOwnedBackGround_End,
+            )
+        )
+        TreeStatus.LOCKED -> SolidColor(CardNormal)
     }
+
+    val buyButton = Brush.linearGradient(
+        colors = listOf(
+            BuyButton_Start,
+            BuyButton_End
+        )
+    )
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
-            .background(bgColor)
+            .background(brush = bgColor)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -65,23 +87,30 @@ fun TreeCard(tree: StoreTreeItem, modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
-                .background(
+                .background(brush =
                     when (tree.status) {
-                        TreeStatus.OWNED -> ButtonOwned
-                        TreeStatus.BUYABLE -> BuyButton
-                        TreeStatus.LOCKED -> TextMuted.copy(alpha = 0.5f)
+                        TreeStatus.OWNED -> SolidColor(ButtonOwned)
+                        TreeStatus.BUYABLE -> buyButton
+                        TreeStatus.LOCKED -> SolidColor(TextMuted.copy(alpha = 0.5f))
+                    }
+                )
+                .then(
+                    if (tree.status == TreeStatus.BUYABLE) {
+                        Modifier.clickable { onBuyClicked() }
+                    } else {
+                        Modifier
                     }
                 )
                 .padding(vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
             when (tree.status) {
-                TreeStatus.OWNED -> Text("Owned ✓", color = BannerGreen, fontWeight = FontWeight.Bold)
+                TreeStatus.OWNED -> Text(stringResource(R.string.store_status_owned), color = BannerGreen, fontWeight = FontWeight.Bold)
                 TreeStatus.BUYABLE -> Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("💰 ", fontSize = 14.sp)
                     Text(tree.tree.price.toString(), fontWeight = FontWeight.Bold)
                 }
-                TreeStatus.LOCKED -> Text("Locked", color = Color.White, fontWeight = FontWeight.Bold)
+                TreeStatus.LOCKED -> Text(stringResource(R.string.store_status_locked), color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }

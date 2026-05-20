@@ -1,7 +1,6 @@
 package com.example.greenfocus.util
 
 import android.util.Log
-import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.repository.DataRepository
@@ -34,7 +33,7 @@ data class TimerState(
     val currentTime: Int = 25 * 60,
     val totalTime: Int = 25 * 60,
     val sessionState: SessionState = SessionState.INIT,
-    val currentTree: TreeType = DataSource.plants[0],
+    val currentTree: TreeType = TreeType.DEFAULT,
 
     val currentFinishSound: Int = DefaultSettings.FINISH_SOUND,
     val deepModeAllowedApps: Set<String> = DefaultSettings.DEEP_MODE_APPS

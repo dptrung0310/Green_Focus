@@ -13,7 +13,7 @@
   {
     "id": "pine",
     "nameKey": "tree_pine",
-    "price": 300,
+    "price": 1,
     "description": "Evergreen focus",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",

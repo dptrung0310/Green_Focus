@@ -1,7 +1,6 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
 import com.example.greenfocus.R
-import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.TreeType
 
 data class PomodoroUiState (
@@ -14,8 +13,9 @@ data class PomodoroUiState (
     val dialogTimeValue: Int = 25,
     val currentPercentage: Float = 0.0f,
 
-    val selectedTree: TreeType = DataSource.plants[0],
+    val selectedTree: TreeType = TreeType.DEFAULT,
     val selectedTreeImage: Int = selectedTree.imageStaticSeed,
+    val unlockedTrees: List<TreeType> = listOf(TreeType.DEFAULT),
 
     val showTimeDialog: Boolean = false,
     val showRationaleDialog: Boolean = false,

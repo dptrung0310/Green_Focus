@@ -12,6 +12,8 @@ import com.example.greenfocus.data.repository.ProdUserRepository
 import com.example.greenfocus.data.repository.ProdUserSettingRepository
 import com.example.greenfocus.data.repository.UserRepository
 import com.example.greenfocus.data.repository.UserSettingRepository
+import com.example.greenfocus.data.repository.ForestRepository
+import com.example.greenfocus.data.repository.ProdForestRepository
 import com.example.greenfocus.util.SoundManager
 import com.example.greenfocus.util.TimerManager
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +31,7 @@ interface AppContainer {
     val userSettingRepository: UserSettingRepository
     val timerManager: TimerManager
     val soundManager: SoundManager
+    val forestRepository: ForestRepository
 }
 
 class DefaultAppContainer(
@@ -53,5 +56,8 @@ class DefaultAppContainer(
     }
     override val soundManager: SoundManager by lazy {
         SoundManager(context)
+    }
+    override val forestRepository: ForestRepository by lazy {
+        ProdForestRepository(context)
     }
 }

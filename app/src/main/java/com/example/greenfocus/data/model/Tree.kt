@@ -34,7 +34,18 @@ data class TreeType(
     val lottieAnimation: String = "", // Tên file lottie trong thư mục assets
     @DrawableRes val imageStaticSeed: Int,
     @DrawableRes val imageStaticBig: Int,
-)
+) {
+    companion object {
+        val DEFAULT = TreeType(
+            id = "default_oak",
+            name = R.string.tree_oak,
+            price = 300,
+            growthTimeMinutes = 25,
+            imageStaticSeed = R.drawable.oak1,
+            imageStaticBig = R.drawable.oak1
+        )
+    }
+}
 
 private val nameKeyToStringRes = mapOf(
     "tree_oak"    to R.string.tree_oak,
@@ -57,7 +68,6 @@ fun TreeTypeDto.toTreeType(): TreeType {
         growthTimeMinutes = growthTimeMinutes,
         lottieAnimation = lottieAnimation,
         imageStaticSeed = TreeResourceMapper.getDrawableResId(imageStaticSeed),
-        imageStaticSmall = TreeResourceMapper.getDrawableResId(imageStaticSmall),
         imageStaticBig = TreeResourceMapper.getDrawableResId(imageStaticBig),
     )
 }

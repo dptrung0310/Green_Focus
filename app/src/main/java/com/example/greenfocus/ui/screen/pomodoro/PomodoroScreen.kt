@@ -2,12 +2,18 @@ package com.example.greenfocus.ui.screen.pomodoro
 
 import android.Manifest
 import android.app.Activity
+import android.app.AppOpsManager
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Process
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,9 +24,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -41,11 +44,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.theme.GreenFocusTheme
 import com.example.greenfocus.R
-import com.example.greenfocus.data.DataSource
 import com.example.greenfocus.data.model.TreeType
-
-// Sample data class for the tree list
-data class TreeItem(val id: Int, val drawableRes: Int)
+import com.example.greenfocus.ui.components.CoinContainer
 
 @Composable
 fun PomodoroScreen(
@@ -77,13 +77,14 @@ fun PomodoroScreen(
         // 1. Username Row
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Xin chào X",
+                text = stringResource(R.string.pomodoro_username, pomodoroUiState.currentUserName),
                 style = MaterialTheme.typography.headlineSmall
             )
+            CoinContainer(coins = pomodoroUiState.userMoneyAmount)
         }
 
         // 2. Timer with Circular Progress, Image, and Countdown
@@ -103,7 +104,22 @@ fun PomodoroScreen(
                 .toggleable(
                     value = pomodoroUiState.isDeepFocusEnabled,
                     enabled = !pomodoroUiState.isTimerRunning,
-                    onValueChange = { pomodoroViewModel.toggleDeepFocus() },
+                    onValueChange = {
+                        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                        val mode = appOps.checkOpNoThrow(
+                            AppOpsManager.OPSTR_GET_USAGE_STATS,
+                            Process.myUid(),
+                            context.packageName
+                        )
+                        // SCENARIO 1: Green Light
+                        if (mode == AppOpsManager.MODE_ALLOWED) {
+                            pomodoroViewModel.toggleDeepFocus()
+                        }
+                        // SCENARIO 2: First Time Ask
+                        else {
+                            pomodoroViewModel.toggleUsageStatsRationaleDialog()
+                        }
+                        },
                     role = Role.Switch
                 ),
             verticalAlignment = Alignment.CenterVertically,
@@ -123,6 +139,7 @@ fun PomodoroScreen(
         TreeSelectionRow(
             isTimerRunning = pomodoroUiState.isTimerRunning,
             selectedTree = pomodoroUiState.selectedTree,
+            unlockedTrees = pomodoroUiState.unlockedTrees,
             changeSelectedTree = { pomodoroViewModel.updateSelectedTree(it) }
         )
 
@@ -189,6 +206,12 @@ fun PomodoroScreen(
         RationaleDialog(
             onDismiss = { pomodoroViewModel.toggleRationaleDialog() },
             permissionLauncher = permissionLauncher
+        )
+    }
+    if (pomodoroUiState.showUsageStatsRationaleDialog) {
+        UsageStatsRationaleDialog(
+            onDismiss = { pomodoroViewModel.toggleUsageStatsRationaleDialog() },
+            context = context
         )
     }
 }
@@ -306,6 +329,7 @@ fun TimerDialog(
 fun TreeSelectionRow(
     isTimerRunning: Boolean,
     selectedTree: TreeType,
+    unlockedTrees: List<TreeType>,
     changeSelectedTree: (TreeType) -> Unit
 ) {
     LazyRow(
@@ -313,7 +337,7 @@ fun TreeSelectionRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        items(DataSource.plants) { tree ->
+        items(unlockedTrees) { tree ->
             val isSelected = selectedTree.id == tree.id
 
             // Using Surface instead of IconButton for better background and shadow control
@@ -362,6 +386,27 @@ fun RationaleDialog(
         confirmButton = {
             TextButton(onClick = {
                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                onDismiss()
+            }) { Text(stringResource(R.string.dialog_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.dialog_dismiss)) }
+        }
+    )
+}
+
+@Composable
+fun UsageStatsRationaleDialog(
+    onDismiss: () -> Unit,
+    context: Context
+) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text(stringResource(R.string.rationale_dialog_title)) },
+        text = { Text(stringResource(R.string.usage_stats_rationale_dialog_content)) },
+        confirmButton = {
+            TextButton(onClick = {
+                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
                 onDismiss()
             }) { Text(stringResource(R.string.dialog_confirm)) }
         },

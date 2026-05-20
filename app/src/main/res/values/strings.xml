@@ -1,11 +1,14 @@
 <resources>
     <string name="app_name">GreenFocus</string>
+    <string name="pomodoro_username">Xin chào %1$s</string>
     <string name="pomodoro_timer_dialog">Hãy nhập số phút</string>
     <string name="pomodoro_deep_mode_button">Bật chế độ "Tập trung sâu"</string>
     <string name="pomodoro_start_button">BẮT ĐẦU</string>
     <string name="pomodoro_stop_button">DỪNG</string>
     <string name="rationale_dialog_title">Ứng dụng yêu cầu quyền</string>
     <string name="rationale_dialog_content">GreenFocus cần tạo Notification giúp người dùng theo dõi tiến độ đồng hồ. Nếu bạn không ngại việc bị làm phiền khi ngủ gật trong lúc bật đồng hồ tập trung, xin vui lòng cấp quyền thông báo cho ứng dụng.</string>
+    <string name="usage_stats_rationale_dialog_content">GreenFocus cần quyền xem hoạt động app giúp người dùng theo dõi tiến độ đồng hồ. Nếu bạn không ngại việc bị làm phiền khi ngủ gật trong lúc bật đồng hồ tập trung, xin vui lòng cấp quyền theo dõi hoạt động app cho ứng dụng.</string>
+
     <string name="dialog_confirm">OK</string>
     <string name="dialog_cancel">Hủy</string>
     <string name="dialog_dismiss">Từ chối</string>

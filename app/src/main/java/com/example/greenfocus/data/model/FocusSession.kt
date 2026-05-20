@@ -1,8 +1,10 @@
 package com.example.greenfocus.data.model
 
+import com.google.firebase.firestore.DocumentId
+
 data class FocusSession(
-    val sessionId: String = "",
-    val userId: String = "",
+    @DocumentId
+    var sessionId: String = "",
     val treeId: String = "",
     val startTime: Long = 0,          // System.currentTimeMillis()
     val durationMinutes: Int = 0,

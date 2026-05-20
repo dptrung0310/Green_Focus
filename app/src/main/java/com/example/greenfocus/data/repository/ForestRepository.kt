@@ -59,7 +59,6 @@ class ProdForestRepository(
                 growthTimeMinutes = dto.growthTimeMinutes,
                 lottieAnimation = dto.lottieAnimation,
                 imageStaticSeed = TreeResourceMapper.getDrawableResId(dto.imageStaticSeed),
-                imageStaticSmall = TreeResourceMapper.getDrawableResId(dto.imageStaticSmall),
                 imageStaticBig = TreeResourceMapper.getDrawableResId(dto.imageStaticBig),
             )
         }

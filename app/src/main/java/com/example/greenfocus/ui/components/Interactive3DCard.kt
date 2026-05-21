@@ -1,8 +1,15 @@
 package com.example.greenfocus.ui.components
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -22,17 +29,41 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.Random
 import kotlin.math.cos
 import kotlin.math.sin
+
+/**
+ * Hàm hỗ trợ giải mã mọi loại Drawable (WebP, PNG, Vector XML) sang Bitmap để xử lý biến dạng Mesh.
+ */
+fun getBitmapFromDrawable(context: Context, drawableId: Int): Bitmap? {
+    val drawable = ContextCompat.getDrawable(context, drawableId) ?: return null
+    if (drawable is BitmapDrawable) {
+        return drawable.bitmap
+    }
+    // Nếu là VectorDrawable (ví dụ dead_tree.xml), vẽ vector đó lên Bitmap
+    val bitmap = Bitmap.createBitmap(
+        drawable.intrinsicWidth.coerceAtLeast(1),
+        drawable.intrinsicHeight.coerceAtLeast(1),
+        Bitmap.Config.ARGB_8888
+    )
+    val canvas = android.graphics.Canvas(bitmap)
+    drawable.setBounds(0, 0, canvas.width, canvas.height)
+    drawable.draw(canvas)
+    return bitmap
+}
 
 /**
  * Lớp hạt mô phỏng vật lý cho lá cây rơi lơ lửng xung quanh cây.
@@ -103,6 +134,9 @@ fun Interactive3DCard(
     cardColor: Color = Color(0xFFFFFFFF),
     glowColor: Color = Color(0xFF81C784)
 ) {
+    // Trạng thái theo dõi người dùng có đang kéo vuốt hay không
+    var isDragging by remember { mutableStateOf(false) }
+
     // Góc nghiêng 3D thực tế của card
     val rotationX = remember { Animatable(0f) }
     val rotationY = remember { Animatable(0f) }
@@ -113,6 +147,9 @@ fun Interactive3DCard(
 
     // Biến lưu thời gian chạy mô phỏng vật lý
     var frameTime by remember { mutableStateOf(0f) }
+    
+    // State trigger để thông báo cho Compose redraw Canvas mỗi frame
+    var tickTrigger by remember { mutableStateOf(0L) }
 
     // Khởi tạo hệ thống hạt tự code (18 hạt lá cây/hạt sáng)
     val particles = remember {
@@ -144,6 +181,7 @@ fun Interactive3DCard(
         while (isActive) {
             withFrameNanos { timeNanos ->
                 frameTime = timeNanos / 1_000_000_000f
+                tickTrigger = timeNanos // Cập nhật để kích hoạt redraw canvas
                 
                 // Lực gió thay đổi điều hòa theo hàm Sin của thời gian
                 val windX = sin(frameTime * 1.5f) * 0.08f
@@ -158,12 +196,32 @@ fun Interactive3DCard(
         }
     }
 
+    // Cường độ đung đưa tự động (chỉ đung đưa khi KHÔNG kéo vuốt)
+    // Dùng transition mượt 400ms để tránh giật khi bắt đầu vuốt hoặc buông tay
+    val swayIntensity by animateFloatAsState(
+        targetValue = if (isDragging) 0f else 1f,
+        animationSpec = tween(durationMillis = 400),
+        label = "swayIntensity"
+    )
+
+    // Góc đung đưa tự động khi đứng yên (Idle Sway)
+    val idleSwayX = sin(frameTime * 1.2f) * 2.2f * swayIntensity
+    val idleSwayY = cos(frameTime * 1.5f) * 2.2f * swayIntensity
+
+    val finalRotationX = rotationX.value + idleSwayX
+    val finalRotationY = rotationY.value + idleSwayY
+
     // Quy đổi góc nghiêng thành phần trăm di chuyển lệch giữa các layer (Parallax)
-    val tiltPercentX = rotationY.value / 20f  // Từ -1.0 đến 1.0
-    val tiltPercentY = -rotationX.value / 20f // Từ -1.0 đến 1.0
+    val tiltPercentX = finalRotationY / 20f  // Từ -1.0 đến 1.0
+    val tiltPercentY = -finalRotationX / 20f // Từ -1.0 đến 1.0
 
     // Coroutine scope để chạy animation song song với drag gesture
     val coroutineScope = rememberCoroutineScope()
+
+    val context = LocalContext.current
+    val bitmap = remember(treeImageRes) {
+        getBitmapFromDrawable(context, treeImageRes)
+    }
 
     Box(
         contentAlignment = Alignment.Center,
@@ -175,6 +233,9 @@ fun Interactive3DCard(
             // Lắng nghe sự kiện kéo vuốt của người dùng
             .pointerInput(Unit) {
                 detectDragGestures(
+                    onDragStart = {
+                        isDragging = true
+                    },
                     onDrag = { change, dragAmount ->
                         change.consume()
                         
@@ -193,7 +254,17 @@ fun Interactive3DCard(
                         coroutineScope.launch { rotationX.animateTo(targetRotX, springSpec) }
                     },
                     onDragEnd = {
+                        isDragging = false
                         // Khi thả tay ra, tự động trả Card về vị trí thăng bằng ban đầu
+                        val springReturn = spring<Float>(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                        coroutineScope.launch { rotationY.animateTo(0f, springReturn) }
+                        coroutineScope.launch { rotationX.animateTo(0f, springReturn) }
+                    },
+                    onDragCancel = {
+                        isDragging = false
                         val springReturn = spring<Float>(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessLow
@@ -205,8 +276,8 @@ fun Interactive3DCard(
             }
             // Áp dụng phép chiếu xoay không gian 3D trên card
             .graphicsLayer {
-                this.rotationX = rotationX.value
-                this.rotationY = rotationY.value
+                this.rotationX = finalRotationX
+                this.rotationY = finalRotationY
                 this.cameraDistance = 18f * density.density // Tạo hiệu ứng xa gần rõ rệt
             }
             .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp))
@@ -234,6 +305,8 @@ fun Interactive3DCard(
             modifier = Modifier
                 .fillMaxSize()
                 .drawWithContent {
+                    // Đọc tickTrigger ở đây để Compose biết cần redraw mỗi khi game-loop chạy
+                    val tick = tickTrigger
                     drawContent()
                     // Vẽ các lá cây dựa trên tọa độ vật lý được tính toán liên tục
                     particles.forEach { particle ->
@@ -252,22 +325,104 @@ fun Interactive3DCard(
                 }
         )
 
-        // LAYER 3: Cây 3D nổi lên phía trước (Dịch chuyển thuận chiều với góc nghiêng)
-        Image(
-            painter = painterResource(id = treeImageRes),
-            contentDescription = "3D Interactive Tree",
+        // LAYER 2.5: Bóng chân cây (Contact Shadow) rõ nét trực quan dưới gốc
+        Box(
             modifier = Modifier
-                .size(110.dp)
+                .size(width = 65.dp, height = 10.dp)
                 .offset(
-                    x = with(density) { (tiltPercentX * 16f).dp },
-                    y = with(density) { (tiltPercentY * 16f).dp }
+                    x = with(density) { (tiltPercentX * 10f).dp },
+                    y = with(density) { (tiltPercentY * 10f + 40f).dp } // đặt ở chân cây
                 )
                 .graphicsLayer {
-                    // Cây hơi nghiêng nhẹ độc lập tạo cảm giác 3D tách biệt khỏi thẻ bài
-                    this.rotationY = tiltPercentX * 6f
-                    this.rotationX = -tiltPercentY * 6f
+                    alpha = 0.35f
+                    scaleX = 1f + (tiltPercentY * 0.15f)
+                    scaleY = 1f - (tiltPercentY * 0.15f)
                 }
+                .background(Color(0xFF1E281E).copy(alpha = 0.7f), shape = RoundedCornerShape(100.dp))
         )
+
+        // LAYER 3: Cây 3D nổi lên phía trước với hiệu ứng uốn lượn lá cây (Mesh Deformation)
+        if (bitmap != null) {
+            Canvas(
+                modifier = Modifier
+                    .size(110.dp)
+                    .offset(
+                        x = with(density) { (tiltPercentX * 16f).dp },
+                        y = with(density) { (tiltPercentY * 16f).dp }
+                    )
+                    .graphicsLayer {
+                        // Cây hơi nghiêng nhẹ độc lập tạo cảm giác 3D tách biệt khỏi thẻ bài
+                        this.rotationY = tiltPercentX * 6f
+                        this.rotationX = -tiltPercentY * 6f
+                        // Lắc lư trục Z nhẹ nhàng cả cây
+                        this.rotationZ = sin(frameTime * 2.0f) * 1.5f
+                    }
+            ) {
+                // Đăng ký redraw theo game-loop bằng cách đọc tickTrigger
+                val tick = tickTrigger
+                
+                drawIntoCanvas { canvas ->
+                    val nativeCanvas = canvas.nativeCanvas
+                    
+                    // Thiết lập lưới Mesh ô vuông (6 cột x 6 hàng = 49 đỉnh)
+                    val meshWidth = 6
+                    val meshHeight = 6
+                    val totalVertices = (meshWidth + 1) * (meshHeight + 1)
+                    
+                    val w = size.width
+                    val h = size.height
+                    val bmpW = bitmap.width.toFloat()
+                    val bmpH = bitmap.height.toFloat()
+                    
+                    val scaleX = w / bmpW
+                    val scaleY = h / bmpH
+                    
+                    // Lưu trạng thái canvas để scale về kích thước của Box Compose (110.dp)
+                    nativeCanvas.save()
+                    nativeCanvas.scale(scaleX, scaleY)
+                    
+                    // Khởi tạo tọa độ đỉnh trong không gian Pixel gốc của Bitmap
+                    val bmpVerts = FloatArray(totalVertices * 2)
+                    
+                    for (r in 0..meshHeight) {
+                        val progressY = r.toFloat() / meshHeight
+                        // heightFactor = 1.0 ở ngọn cây (progressY=0), và bằng 0.0 ở gốc cây (progressY=1.0)
+                        val heightFactor = 1f - progressY
+                        
+                        // Độ uốn lượn ngang (Gió thổi xô lệch lá cây)
+                        // progressY * 2.5f tạo ra độ trễ pha pha sóng theo chiều dọc (wavy wind effect)
+                        val swayX = sin(frameTime * 3.0f + progressY * 2.5f) * (18f / scaleX) * heightFactor
+                        // Nhấp nhô nhẹ trục đứng của lá
+                        val swayY = cos(frameTime * 2.5f) * (2f / scaleY) * heightFactor
+                        
+                        val targetY = bmpH * progressY
+                        
+                        for (c in 0..meshWidth) {
+                            val progressX = c.toFloat() / meshWidth
+                            val targetX = bmpW * progressX
+                            
+                            val index = (r * (meshWidth + 1) + c) * 2
+                            bmpVerts[index] = targetX + swayX
+                            bmpVerts[index + 1] = targetY + swayY
+                        }
+                    }
+                    
+                    // Vẽ bitmap biến dạng bằng thuật toán Mesh gốc của Android OS
+                    nativeCanvas.drawBitmapMesh(
+                        bitmap,
+                        meshWidth,
+                        meshHeight,
+                        bmpVerts,
+                        0,
+                        null,
+                        0,
+                        null
+                    )
+                    
+                    nativeCanvas.restore()
+                }
+            }
+        }
 
         // LAYER 4: Dynamic Specular Sheen (Luồng sáng lướt qua thẻ bài khi xoay)
         Box(

@@ -22,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.data.model.TreeResourceMapper
@@ -37,7 +38,7 @@ fun ForestScreen(
     // 1. Safely collect the UI state from your ViewModel
     val uiState by forestViewModel.forestUiState.collectAsState()
 
-    val screenBackgroundColor = Color(0xFFF1F8EE)
+    val screenBackgroundColor = Color(0xFFFAF7EC)
 
     Column(
         modifier = modifier
@@ -245,22 +246,25 @@ fun TreeCard(
                 R.drawable.dead_tree
             }),
             contentDescription = "Tree",
-            modifier = Modifier.size(60.dp),
+            modifier = Modifier.size(50.dp),
             contentScale = ContentScale.Fit
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
-            text = "${duration} phút",
+            text = stringResource(id = TreeResourceMapper.getNameResId(treeId)),
             color = textColor,
             fontWeight = FontWeight.Bold,
-            fontSize = 14.sp
+            fontSize = 13.sp
         )
+
+        Spacer(modifier = Modifier.height(2.dp))
+
         Text(
-            text = dateString,
+            text = "${duration} phút • ${dateString}",
             color = textColor.copy(alpha = 0.8f),
-            fontSize = 12.sp
+            fontSize = 11.sp
         )
     }
 }

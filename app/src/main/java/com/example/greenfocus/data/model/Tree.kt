@@ -78,18 +78,31 @@ data class StoreTreeItem(
 )
 
 object TreeResourceMapper {
-    fun getDrawableResId(imageName: String): Int {
-        return when (imageName) {
-            //All image is tree for testing purpose
-            "tree_oak" -> R.drawable.oak1
-            "tree_pine" -> R.drawable.pine1
-            "tree_cherry" -> R.drawable.cherry1
-            "tree_maple" -> R.drawable.maple_tree
-            "tree_palm" -> R.drawable.palm_tree
-            "tree_cactus" -> R.drawable.cactus
-            "tree_bamboo" -> R.drawable.bamboo_tree
-            "tree_sakura" -> R.drawable.sakura
+    fun getDrawableResId(treeId: String): Int {
+        return when (treeId) {
+            "default_oak" -> R.drawable.oak1
+            "pine" -> R.drawable.pine1
+            "cherry" -> R.drawable.cherry1
+            "maple" -> R.drawable.maple_tree
+            "palm" -> R.drawable.palm_tree
+            "cactus" -> R.drawable.cactus
+            "bamboo" -> R.drawable.bamboo_tree
+            "sakura" -> R.drawable.sakura
             else -> R.drawable.forest
+        }
+    }
+
+    fun getNameResId(treeId: String): Int {
+        return when (treeId) {
+            "default_oak" -> R.string.tree_oak
+            "pine" -> R.string.tree_pine
+            "cherry" -> R.string.tree_cherry
+            "maple" -> R.string.tree_maple
+            "palm" -> R.string.tree_palm
+            "cactus" -> R.string.tree_cactus
+            "bamboo" -> R.string.tree_bamboo
+            "sakura" -> R.string.tree_sakura
+            else -> R.string.tree_oak
         }
     }
 }

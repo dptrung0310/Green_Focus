@@ -3,6 +3,7 @@ package com.example.greenfocus.ui.screen.main
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -21,7 +22,6 @@ import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.screen.store.StoreViewModel
 import com.example.greenfocus.util.Sound
@@ -35,23 +35,28 @@ fun MainScreen(
     val navBackStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
     val soundManager = (LocalContext.current.applicationContext as GreenFocusApp).container.soundManager
+    val timerManager = (LocalContext.current.applicationContext as GreenFocusApp).container.timerManager
+    val timerState by timerManager.timerState.collectAsState()
+    val isTimerRunning = timerState.isTimerRunning
 
     Scaffold(
         bottomBar = {
-            BottomNavBar(
-                currentRoute = currentRoute,
-                onNavigate = { route ->
-                    innerNavController.navigate(route) {
-                        // Tránh tạo nhiều bản sao của cùng một màn hình
-                        soundManager.playSound(Sound.CLICK)
-                        popUpTo(innerNavController.graph.findStartDestination().id) {
-                            saveState = true
+            if (!isTimerRunning) {
+                BottomNavBar(
+                    currentRoute = currentRoute,
+                    onNavigate = { route ->
+                        innerNavController.navigate(route) {
+                            // Tránh tạo nhiều bản sao của cùng một màn hình
+                            soundManager.playSound(Sound.CLICK)
+                            popUpTo(innerNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
-                }
-            )
+                )
+            }
         }
     ) { innerPadding ->
         NavHost(

@@ -76,10 +76,9 @@ class TimerManager(
                 delay(1000L)
                 _timerState.update { it.copy(currentTime = it.currentTime - 1) }
 
-                //TODO: Remove this if not needed
-//                if (_timerState.value.currentTime * 2 == _timerState.value.totalTime) {
-//                    _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
-//                }
+                if (_timerState.value.currentTime * 2 == _timerState.value.totalTime) {
+                    _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
+                }
             }
             timerFinished(scope)
         }

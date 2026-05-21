@@ -1,5 +1,6 @@
 package com.example.greenfocus.ui.screen.social
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,7 @@ fun SocialScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFFAF7EC))
             .padding(16.dp)
             .statusBarsPadding()
     ) {

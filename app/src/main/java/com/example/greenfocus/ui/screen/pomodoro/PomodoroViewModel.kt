@@ -56,7 +56,13 @@ class PomodoroViewModel(
                 }
                 when (timerState.sessionState) {
                     SessionState.INIT -> {
-                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSeed)}
+                        _uiState.update { it.copy(
+                            selectedTreeImage = it.selectedTree.imageStaticSeed,
+                            isHalfDone = false  // reset animation for new session
+                        )}
+                    }
+                    SessionState.HALF_DONE -> {
+                        _uiState.update { it.copy(isHalfDone = true) }
                     }
                     SessionState.SUCCESS -> {
                         onTimerFinishedSuccessfully()
@@ -64,13 +70,8 @@ class PomodoroViewModel(
                     SessionState.FAILED -> {
                         onTimerFailed()
                     }
-
-                    //TODO: Remove this if not needed
-//                    SessionState.HALF_DONE -> {
-//                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSmall)}
-//                    }
                     else -> {
-                        // Do nothing for INIT or RUNNING
+                        // Do nothing for RUNNING
                     }
                 }
             }

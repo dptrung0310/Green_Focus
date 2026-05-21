@@ -41,8 +41,8 @@ data class TreeType(
             name = R.string.tree_oak,
             price = 300,
             growthTimeMinutes = 25,
-            imageStaticSeed = R.drawable.oak1,
-            imageStaticBig = R.drawable.oak1
+            imageStaticSeed = R.drawable.oak_small,
+            imageStaticBig = R.drawable.oak_big
         )
     }
 }
@@ -67,8 +67,8 @@ fun TreeTypeDto.toTreeType(): TreeType {
         description = description,
         growthTimeMinutes = growthTimeMinutes,
         lottieAnimation = lottieAnimation,
-        imageStaticSeed = TreeResourceMapper.getDrawableResId(imageStaticSeed),
-        imageStaticBig = TreeResourceMapper.getDrawableResId(imageStaticBig),
+        imageStaticSeed = TreeResourceMapper.getSeedDrawable(id),
+        imageStaticBig  = TreeResourceMapper.getBigDrawable(id),
     )
 }
 
@@ -78,18 +78,48 @@ data class StoreTreeItem(
 )
 
 object TreeResourceMapper {
-    fun getDrawableResId(imageName: String): Int {
-        return when (imageName) {
-            //All image is tree for testing purpose
-            "tree_oak" -> R.drawable.oak1
-            "tree_pine" -> R.drawable.pine1
-            "tree_cherry" -> R.drawable.cherry1
-            "tree_maple" -> R.drawable.maple_tree
-            "tree_palm" -> R.drawable.palm_tree
-            "tree_cactus" -> R.drawable.cactus
-            "tree_bamboo" -> R.drawable.bamboo_tree
-            "tree_sakura" -> R.drawable.sakura
-            else -> R.drawable.forest
+    fun getSeedDrawable(treeId: String): Int {
+        return when (treeId) {
+            "default_oak" -> R.drawable.oak_small
+            "pine"        -> R.drawable.pine_small
+            "cherry"      -> R.drawable.cherry_small
+            "maple"       -> R.drawable.maple_small
+            "palm"        -> R.drawable.palm_small
+            "cactus"      -> R.drawable.cactus_small
+            "bamboo"      -> R.drawable.bamboo_small
+            "sakura"      -> R.drawable.sakura_small
+            else          -> R.drawable.forest
+        }
+    }
+
+    fun getBigDrawable(treeId: String): Int {
+        return when (treeId) {
+            "default_oak" -> R.drawable.oak_big
+            "pine"        -> R.drawable.pine_big
+            "cherry"      -> R.drawable.cherry_big
+            "maple"       -> R.drawable.maple_big
+            "palm"        -> R.drawable.palm_big
+            "cactus"      -> R.drawable.cactus_big
+            "bamboo"      -> R.drawable.bamboo_big
+            "sakura"      -> R.drawable.sakura_big
+            else          -> R.drawable.forest
+        }
+    }
+
+    // Keep for backward-compatibility (used in ForestScreen TreeGrid)
+    fun getDrawableResId(treeId: String): Int = getBigDrawable(treeId)
+
+    fun getNameResId(treeId: String): Int {
+        return when (treeId) {
+            "default_oak" -> R.string.tree_oak
+            "pine"        -> R.string.tree_pine
+            "cherry"      -> R.string.tree_cherry
+            "maple"       -> R.string.tree_maple
+            "palm"        -> R.string.tree_palm
+            "cactus"      -> R.string.tree_cactus
+            "bamboo"      -> R.string.tree_bamboo
+            "sakura"      -> R.string.tree_sakura
+            else          -> R.string.tree_oak
         }
     }
 }

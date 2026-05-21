@@ -11,7 +11,7 @@ val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
 
 //Color for Store
-val StoreBackGround = Color(0xFFF9FBE7)
+val StoreBackGround = Color(0xFFFAF7EC)
 val BuyButton_Start = Color(0xFFffd24d)
 val BuyButton_End = Color(0xFFffab2a)
 val CardNormal = Color.White
@@ -27,7 +27,7 @@ val BannerGreen_End = Color(0xFF2f7f33)
 val BottomNavBackGround = Color(0xFFFFFFFF)
 
 // Colors for Auth screens
-val AuthBackground = Color(0xFFF9FBE7)
+val AuthBackground = Color(0xFFFAF7EC)
 val AuthGreenLight = Color(0xFF4CAF50)
 val AuthGreenDark = Color(0xFF2E7D32)
 val AuthWaveLight = Color(0xFFA5D6A7)

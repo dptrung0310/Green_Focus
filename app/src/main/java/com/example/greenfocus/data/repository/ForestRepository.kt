@@ -58,8 +58,8 @@ class ProdForestRepository(
                 description = dto.description,
                 growthTimeMinutes = dto.growthTimeMinutes,
                 lottieAnimation = dto.lottieAnimation,
-                imageStaticSeed = TreeResourceMapper.getDrawableResId(dto.imageStaticSeed),
-                imageStaticBig = TreeResourceMapper.getDrawableResId(dto.imageStaticBig),
+                imageStaticSeed = TreeResourceMapper.getSeedDrawable(dto.id),
+                imageStaticBig  = TreeResourceMapper.getBigDrawable(dto.id),
             )
         }
     }

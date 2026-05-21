@@ -32,13 +32,19 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.togetherWith
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -125,6 +131,9 @@ fun PomodoroScreen(
             currentTree = pomodoroUiState.selectedTreeImage,
             currentTreeName = stringResource(id = pomodoroUiState.selectedTree.name),
             currentProgress = pomodoroUiState.currentPercentage,
+            isHalfDone = pomodoroUiState.isHalfDone,
+            seedImage = pomodoroUiState.selectedTree.imageStaticSeed,
+            bigImage = pomodoroUiState.selectedTree.imageStaticBig,
             onTimerClick = { pomodoroViewModel.toggleTimeDialog() },
             isTimerRunning = pomodoroUiState.isTimerRunning,
             modifier = Modifier.scale(timerScale)
@@ -355,10 +364,29 @@ fun TimerBlock(
     currentProgress: Float,
     currentTree: Int,
     currentTreeName: String,
+    isHalfDone: Boolean = false,
+    seedImage: Int = currentTree,
+    bigImage: Int = currentTree,
     onTimerClick: () -> Unit,
     isTimerRunning: Boolean,
     modifier: Modifier = Modifier
 ) {
+    // Track glow animation: pulses once when isHalfDone becomes true
+    var glowVisible by remember { mutableStateOf(false) }
+    val glowAlpha by animateFloatAsState(
+        targetValue = if (glowVisible) 0.55f else 0f,
+        animationSpec = tween(durationMillis = 800),
+        label = "glowAlpha"
+    )
+
+    LaunchedEffect(isHalfDone) {
+        if (isHalfDone) {
+            glowVisible = true
+            kotlinx.coroutines.delay(900)
+            glowVisible = false
+        }
+    }
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(250.dp)
@@ -372,6 +400,17 @@ fun TimerBlock(
             trackColor = Color(0xFFC8E6C9)
         )
 
+        // Glow ring that pulses once at the halfway point
+        if (glowAlpha > 0f) {
+            CircularProgressIndicator(
+                progress = { 1f },
+                modifier = Modifier.fillMaxSize().alpha(glowAlpha),
+                strokeWidth = 12.dp,
+                color = Color(0xFF66BB6A),
+                trackColor = Color.Transparent
+            )
+        }
+
         // Image and Text inside the circle
         Column(
             horizontalAlignment = Alignment.CenterHorizontally
@@ -383,18 +422,44 @@ fun TimerBlock(
                 color = Color(0xFF2E7D32)
             )
             Spacer(modifier = Modifier.height(4.dp))
-            Image(
-                painter = painterResource(currentTree), // Replace with tree image
-                contentDescription = "Current growing tree",
-                modifier = Modifier.size(80.dp)
-            )
+
+            // AnimatedContent: swap seed → big with scale-bounce when isHalfDone
+            AnimatedContent(
+                targetState = isHalfDone,
+                transitionSpec = {
+                    // Entering big tree: scale from 40% with bouncy spring + fade in
+                    (scaleIn(
+                        initialScale = 0.4f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessLow
+                        )
+                    ) + fadeIn(animationSpec = tween(350))) togetherWith
+                    // Leaving small tree: scale up to 160% + quick fade out
+                    (scaleOut(
+                        targetScale = 1.6f,
+                        animationSpec = tween(280)
+                    ) + fadeOut(animationSpec = tween(200)))
+                },
+                label = "treeGrowAnimation"
+            ) { halfDone ->
+                val imageRes = if (halfDone) bigImage else seedImage
+                // Thay thế Image phẳng cũ bằng Interactive3DCard
+                com.example.greenfocus.ui.components.Interactive3DCard(
+                    treeImageRes = imageRes,
+                    modifier = Modifier.size(110.dp),
+                    cardColor = Color(0xFFFAF7EC), // Màu kem đồng bộ màu nền ứng dụng
+                    glowColor = Color(0x334CAF50)
+                )
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = currentTime,
                 style = MaterialTheme.typography.displayMedium,
                 color = Color(0xFF2E7D32),
                 modifier = Modifier.clickable(
-                    enabled = !isTimerRunning, // Only clickable when the timer is NOT running
+                    enabled = !isTimerRunning,
                     onClick = { onTimerClick() }
                 )
             )

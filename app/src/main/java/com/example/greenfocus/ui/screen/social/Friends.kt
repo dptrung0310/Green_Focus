@@ -130,6 +130,48 @@ fun FriendRequestRow(
 }
 
 @Composable
+fun RoomInviteRow(
+    invite: TeamInvite,
+    onJoin: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE8F5E9)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(text = "👥")
+        }
+        Column(
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .weight(1f)
+        ) {
+            Text(text = invite.fromName, fontWeight = FontWeight.Bold)
+            Text(
+                text = "mời bạn vào phòng",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+        TextButton(onClick = onJoin) {
+            Text("Vào phòng", color = Color(0xFF2E7D32))
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Red)
+        }
+    }
+}
+
+@Composable
 fun AddFriendDialog(
     viewModel: SocialViewModel,
     onDismiss: () -> Unit

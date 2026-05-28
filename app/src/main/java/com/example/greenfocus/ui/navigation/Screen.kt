@@ -16,4 +16,9 @@ sealed class Screen(val route: String) {
     object Social   : Screen("social")
     object Profile  : Screen("profile")
     object Settings : Screen("settings")
+
+    // Team Room
+    object TeamRoom : Screen("team_room/{roomId}") {
+        fun createRoute(roomId: String) = "team_room/$roomId"
+    }
 }

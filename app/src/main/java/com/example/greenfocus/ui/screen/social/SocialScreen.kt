@@ -1,4 +1,4 @@
-package com.example.greenfocus.ui.screen.social
+﻿package com.example.greenfocus.ui.screen.social
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,14 +16,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.data.model.FriendRequest
+import kotlinx.coroutines.launch
 
 @Composable
-fun SocialScreen(viewModel: SocialViewModel = viewModel()) {
+fun SocialScreen(
+    onNavigateToTeamRoom: (String) -> Unit = {},
+    viewModel: SocialViewModel = viewModel()
+) {
     var selectedTab by remember { mutableStateOf("Leaderboard") }
     val uiState by viewModel.uiState.collectAsState()
+    val invites by viewModel.inviteList.collectAsState()
     var showRequestsDialog by remember { mutableStateOf(false) }
+    var inviteErrorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     val requests = (uiState as? SocialUiState.Success)?.friendRequests ?: emptyList()
+    val totalInvites = requests.size + invites.size
 
     Column(
         modifier = Modifier
@@ -49,7 +57,7 @@ fun SocialScreen(viewModel: SocialViewModel = viewModel()) {
             IconButton(onClick = { showRequestsDialog = true }) {
                 BadgedBox(
                     badge = {
-                        if (requests.isNotEmpty()) {
+                        if (totalInvites > 0) {
                             Badge(
                                 containerColor = Color.Red,
                                 modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
@@ -116,7 +124,10 @@ fun SocialScreen(viewModel: SocialViewModel = viewModel()) {
                             friends = state.friends,
                             viewModel = viewModel
                         )
-                        "Team" -> TeamScreen()
+                        "Team" -> TeamScreen(
+                            onNavigateToRoom = onNavigateToTeamRoom,
+                            viewModel = viewModel
+                        )
                     }
                 }
                 is SocialUiState.Error -> {
@@ -133,43 +144,89 @@ fun SocialScreen(viewModel: SocialViewModel = viewModel()) {
     // Friend Requests Dialog
     if (showRequestsDialog && uiState is SocialUiState.Success) {
         FriendRequestsDialog(
-            requests = requests,
-            onAccept = { viewModel.acceptRequest(it) },
-            onDecline = { viewModel.declineRequest(it) },
-            onDismiss = { showRequestsDialog = false }
+            friendRequests = requests,
+            roomInvites = invites,
+            inviteErrorMessage = inviteErrorMessage,
+            onAcceptFriend = { viewModel.acceptRequest(it) },
+            onDeclineFriend = { viewModel.declineRequest(it) },
+            onJoinRoomInvite = { invite ->
+                inviteErrorMessage = null
+                scope.launch {
+                    val result = viewModel.acceptInvite(invite)
+                    if (result.isSuccess) {
+                        showRequestsDialog = false
+                        onNavigateToTeamRoom(invite.roomId)
+                    } else {
+                        inviteErrorMessage = result.exceptionOrNull()?.message ?: "Không thể vào phòng"
+                    }
+                }
+            },
+            onDismissInvite = { invite ->
+                viewModel.deleteInvite(invite.id)
+            },
+            onDismiss = {
+                inviteErrorMessage = null
+                showRequestsDialog = false
+            }
         )
     }
 }
 
 @Composable
 fun FriendRequestsDialog(
-    requests: List<FriendRequest>,
-    onAccept: (FriendRequest) -> Unit,
-    onDecline: (FriendRequest) -> Unit,
+    friendRequests: List<FriendRequest>,
+    roomInvites: List<TeamInvite>,
+    inviteErrorMessage: String?,
+    onAcceptFriend: (FriendRequest) -> Unit,
+    onDeclineFriend: (FriendRequest) -> Unit,
+    onJoinRoomInvite: (TeamInvite) -> Unit,
+    onDismissInvite: (TeamInvite) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Friend Invitations", fontWeight = FontWeight.Bold) },
         text = {
-            if (requests.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(100.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("No pending invitations", color = Color.Gray)
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
-                ) {
-                    items(requests) { request ->
-                        FriendRequestRow(
-                            request = request,
-                            onAccept = { onAccept(request) },
-                            onDecline = { onDecline(request) }
-                        )
+            Column {
+                if (friendRequests.isEmpty() && roomInvites.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No pending invitations", color = Color.Gray)
                     }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)
+                    ) {
+                        if (roomInvites.isNotEmpty()) {
+                            items(roomInvites) { invite ->
+                                RoomInviteRow(
+                                    invite = invite,
+                                    onJoin = { onJoinRoomInvite(invite) },
+                                    onDismiss = { onDismissInvite(invite) }
+                                )
+                            }
+                        }
+                        if (friendRequests.isNotEmpty()) {
+                            items(friendRequests) { request ->
+                                FriendRequestRow(
+                                    request = request,
+                                    onAccept = { onAcceptFriend(request) },
+                                    onDecline = { onDeclineFriend(request) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (!inviteErrorMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = inviteErrorMessage,
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
                 }
             }
         },
@@ -180,3 +237,4 @@ fun FriendRequestsDialog(
         }
     )
 }
+

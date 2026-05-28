@@ -1,5 +1,6 @@
 package com.example.greenfocus.data.repository
 
+import com.example.greenfocus.data.model.FriendRequest
 import com.example.greenfocus.data.model.User
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
@@ -25,11 +26,19 @@ interface UserRepository {
     suspend fun addExperience(xpToAdd: Int): Boolean
     suspend fun addCoins(amount: Int): Boolean
     suspend fun purchaseTree(uid: String, treeId: String, price: Int): PurchaseResult
+    suspend fun getUsersByIds(uids: List<String>): List<User>
+    suspend fun getUserByEmail(email: String): User?
+    suspend fun sendFriendRequest(request: FriendRequest): Boolean
+    fun getFriendRequestsFlow(uid: String): Flow<List<FriendRequest>>
+    suspend fun acceptFriendRequest(request: FriendRequest): Boolean
+    suspend fun declineFriendRequest(requestId: String): Boolean
+    suspend fun isFriendRequestSent(fromUid: String, toUid: String): Boolean
 }
 
 class ProdUserRepository : UserRepository {
     private val db = FirebaseModule.firestore
     private val usersCollection = db.collection(FirestoreCollections.USERS)
+    private val requestsCollection = db.collection(FirestoreCollections.FRIEND_REQUESTS)
 
     override suspend fun getCurrentUserProfile(): User? {
         val uid = FirebaseModule.auth.currentUser?.uid ?: return null
@@ -58,18 +67,13 @@ class ProdUserRepository : UserRepository {
                     close(error)
                     return@addSnapshotListener
                 }
-
                 if (snapshot != null && snapshot.exists()) {
-                    val user = snapshot.toObject(User::class.java)
-                    trySend(user)
+                    trySend(snapshot.toObject(User::class.java))
                 } else {
                     trySend(null)
                 }
             }
-
-        awaitClose {
-            listenerRegistration.remove()
-        }
+        awaitClose { listenerRegistration.remove() }
     }
 
     override suspend fun updateUser(user: User): Boolean {
@@ -91,7 +95,6 @@ class ProdUserRepository : UserRepository {
                 val snapshot = transaction.get(userRef)
                 val user = snapshot.toObject(User::class.java) ?: return@runTransaction false
                 
-                // Logic tính toán cấp độ
                 var newXp = user.experience + xpToAdd
                 var newLevel = user.level
                 var xpNeeded = newLevel * 500
@@ -102,7 +105,6 @@ class ProdUserRepository : UserRepository {
                     xpNeeded = newLevel * 500
                 }
 
-                // Cập nhật trực tiếp vào transaction
                 transaction.update(userRef, mapOf(
                     "experience" to newXp,
                     "level" to newLevel
@@ -118,18 +120,14 @@ class ProdUserRepository : UserRepository {
     override suspend fun purchaseTree(uid: String, treeId: String, price: Int): PurchaseResult {
         return try {
             val userRef = usersCollection.document(uid)
-
             db.runTransaction { transaction ->
                 val snapshot = transaction.get(userRef)
                 val user = snapshot.toObject(User::class.java)
                     ?: return@runTransaction PurchaseResult.Error("User not found")
 
-                // Kiểm tra đã sở hữu chưa
                 if (user.unlockedTreeIds.contains(treeId)) {
                     return@runTransaction PurchaseResult.AlreadyOwned
                 }
-
-                // Kiểm tra đủ coins chưa
                 if (user.coins < price) {
                     return@runTransaction PurchaseResult.InsufficientFunds
                 }
@@ -162,4 +160,99 @@ class ProdUserRepository : UserRepository {
         }
     }
 
+    override suspend fun getUsersByIds(uids: List<String>): List<User> {
+        if (uids.isEmpty()) return emptyList()
+        return try {
+            val result = mutableListOf<User>()
+            val chunks = uids.chunked(10)
+            for (chunk in chunks) {
+                val querySnapshot = usersCollection.whereIn("uid", chunk).get().await()
+                result.addAll(querySnapshot.toObjects(User::class.java))
+            }
+            result
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    override suspend fun getUserByEmail(email: String): User? {
+        return try {
+            val querySnapshot = usersCollection.whereEqualTo("email", email).limit(1).get().await()
+            if (!querySnapshot.isEmpty) {
+                querySnapshot.documents[0].toObject(User::class.java)
+            } else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    override suspend fun isFriendRequestSent(fromUid: String, toUid: String): Boolean {
+        return try {
+            val query = requestsCollection
+                .whereEqualTo("fromUid", fromUid)
+                .whereEqualTo("toUid", toUid)
+                .limit(1)
+                .get()
+                .await()
+            !query.isEmpty
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    override suspend fun sendFriendRequest(request: FriendRequest): Boolean {
+        return try {
+            val docRef = requestsCollection.document()
+            val finalRequest = request.copy(id = docRef.id)
+            docRef.set(finalRequest).await()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    override fun getFriendRequestsFlow(uid: String): Flow<List<FriendRequest>> = callbackFlow {
+        val listener = requestsCollection.whereEqualTo("toUid", uid)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                val requests = snapshot?.toObjects(FriendRequest::class.java) ?: emptyList()
+                trySend(requests)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    override suspend fun acceptFriendRequest(request: FriendRequest): Boolean {
+        return try {
+            db.runTransaction { transaction ->
+                val currentUid = request.toUid
+                val friendUid = request.fromUid
+                
+                transaction.update(usersCollection.document(currentUid), 
+                    "friendIds", FieldValue.arrayUnion(friendUid))
+                transaction.update(usersCollection.document(friendUid), 
+                    "friendIds", FieldValue.arrayUnion(currentUid))
+                transaction.delete(requestsCollection.document(request.id))
+            }.await()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    override suspend fun declineFriendRequest(requestId: String): Boolean {
+        return try {
+            requestsCollection.document(requestId).delete().await()
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
 }

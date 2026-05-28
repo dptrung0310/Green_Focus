@@ -3,7 +3,7 @@ package com.example.greenfocus.ui.screen.social
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -13,43 +13,41 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class LeaderboardItem(
-    val rank: String,
-    val icon: String,
-    val name: String,
-    val trees: Int,
-    val isCurrentUser: Boolean = false
-)
+import com.example.greenfocus.data.model.User
+import com.example.greenfocus.di.FirebaseModule
 
 @Composable
-fun LeaderboardScreen() {
-    val leaderboardList = listOf(
-        LeaderboardItem("🥇", "👨", "Alex Chen", 245),
-        LeaderboardItem("🥈", "👩", "Sarah Kim", 238),
-        LeaderboardItem("🥉", "👨", "Mike Ross", 220),
-        LeaderboardItem("#12", "😊", "You", 156, true),
-        LeaderboardItem("#13", "👩", "Emma Stone", 145)
-    )
+fun LeaderboardScreen(users: List<User>) {
+    val currentUid = FirebaseModule.auth.currentUser?.uid
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
-        items(leaderboardList) { item ->
-            LeaderboardRow(item)
+        itemsIndexed(users) { index, user ->
+            val rankLabel = when (index) {
+                0 -> "🥇"
+                1 -> "🥈"
+                2 -> "🥉"
+                else -> "#${index + 1}"
+            }
+            LeaderboardRow(
+                rank = rankLabel,
+                user = user,
+                isCurrentUser = user.uid == currentUid
+            )
         }
     }
 }
 
 @Composable
-fun LeaderboardRow(item: LeaderboardItem) {
+fun LeaderboardRow(rank: String, user: User, isCurrentUser: Boolean) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (item.isCurrentUser) Color(0xFFE8F5E9) else Color.White
+            containerColor = if (isCurrentUser) Color(0xFFE8F5E9) else Color.White
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -60,10 +58,10 @@ fun LeaderboardRow(item: LeaderboardItem) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = item.rank,
+                text = rank,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.width(40.dp)
+                modifier = Modifier.width(45.dp)
             )
             
             Box(
@@ -72,7 +70,8 @@ fun LeaderboardRow(item: LeaderboardItem) {
                     .background(Color(0xFFF5F5F5), CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = item.icon, fontSize = 24.sp)
+                // Hiển thị icon mặc định hoặc xử lý avatarUrl bằng Coil sau này
+                Text(text = if (isCurrentUser) "😊" else "👤", fontSize = 24.sp)
             }
             
             Column(
@@ -81,12 +80,12 @@ fun LeaderboardRow(item: LeaderboardItem) {
                     .weight(1f)
             ) {
                 Text(
-                    text = item.name,
-                    fontWeight = if (item.isCurrentUser) FontWeight.Bold else FontWeight.Medium,
+                    text = if (isCurrentUser) "You" else user.displayName.ifEmpty { "Unknown" },
+                    fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 16.sp
                 )
                 Text(
-                    text = "${item.trees} trees planted",
+                    text = "${user.totalTreesPlanted} trees planted",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

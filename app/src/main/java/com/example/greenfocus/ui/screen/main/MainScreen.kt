@@ -1,4 +1,4 @@
-package com.example.greenfocus.ui.screen.main
+﻿package com.example.greenfocus.ui.screen.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -9,10 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.ui.components.BottomNavBar
 import com.example.greenfocus.ui.navigation.Screen
@@ -21,6 +23,7 @@ import com.example.greenfocus.ui.screen.forest.ForestScreen
 import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
 import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
+import com.example.greenfocus.ui.screen.social.TeamRoomScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.ui.screen.store.StoreViewModel
@@ -81,12 +84,26 @@ fun MainScreen(
                 StoreScreen(viewModel = viewModel)
             }
             composable(Screen.Social.route) {
-                SocialScreen()
+                SocialScreen(
+                    onNavigateToTeamRoom = { roomId ->
+                        innerNavController.navigate(Screen.TeamRoom.createRoute(roomId))
+                    }
+                )
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     onLogout = onLogout,
                     onSettingNavigate = onSettingNavigate)
+            }
+            composable(
+                route = "team_room/{roomId}",
+                arguments = listOf(navArgument("roomId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
+                TeamRoomScreen(
+                    roomId = roomId,
+                    onBack = { innerNavController.popBackStack() }
+                )
             }
         }
     }

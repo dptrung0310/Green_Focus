@@ -12,9 +12,11 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.data.model.TreeType
-import com.example.greenfocus.data.repository.SessionRepository
-import com.example.greenfocus.data.repository.SessionState
+import com.example.greenfocus.data.repository.UserRepository
+import com.example.greenfocus.data.repository.ForestRepository
+import com.example.greenfocus.util.SessionState
 import com.example.greenfocus.util.TimerForegroundService
+import com.example.greenfocus.util.TimerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,34 +24,45 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class PomodoroViewModel(
-    private val sessionRepository: SessionRepository
+    private val timerManager: TimerManager,
+    private val userRepository: UserRepository,
+    private val forestRepository: ForestRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PomodoroUiState())
     var pomodoroUiState : StateFlow<PomodoroUiState> = _uiState.asStateFlow()
+    private var allTrees: List<TreeType> = emptyList()
 
     init {
         // As soon as the ViewModel is created, start listening to the TimerManager
         observeTimer()
+        observeUserState()
     }
 
     private fun observeTimer() {
         viewModelScope.launch {
-            sessionRepository.timerState.collect {
+            timerManager.timerState.collect {
                 timerState ->
                 val progress = if (timerState.totalTime > 0) {
                     timerState.currentTime.toFloat() / timerState.totalTime.toFloat()
                 } else 1f
                 _uiState.update { currentState ->
                     currentState.copy(
-                        dialogTimeValue = timerState.currentTime / 60,
                         isTimerRunning = timerState.isTimerRunning,
+                        isDeepFocusEnabled = timerState.isDeepModeEnabled,
                         currentPercentage = progress,
                         formattedTime = formatTime(timerState.currentTime),
+                        selectedTree = timerState.currentTree
                     )
                 }
                 when (timerState.sessionState) {
                     SessionState.INIT -> {
-                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSeed)}
+                        _uiState.update { it.copy(
+                            selectedTreeImage = it.selectedTree.imageStaticSeed,
+                            isHalfDone = false  // reset animation for new session
+                        )}
+                    }
+                    SessionState.HALF_DONE -> {
+                        _uiState.update { it.copy(isHalfDone = true) }
                     }
                     SessionState.SUCCESS -> {
                         onTimerFinishedSuccessfully()
@@ -57,42 +70,79 @@ class PomodoroViewModel(
                     SessionState.FAILED -> {
                         onTimerFailed()
                     }
-                    SessionState.HALF_DONE -> {
-                        _uiState.update { it.copy(selectedTreeImage = it.selectedTree.imageStaticSmall)}
-                    }
                     else -> {
-                        // Do nothing for INIT or RUNNING
+                        // Do nothing for RUNNING
                     }
                 }
             }
         }
     }
 
+    private fun observeUserState() {
+        viewModelScope.launch {
+            if (allTrees.isEmpty()) {
+                try {
+                    allTrees = forestRepository.getAllTrees()
+                } catch (e: Exception) {
+                    allTrees = listOf(TreeType.DEFAULT)
+                }
+            }
+
+            userRepository.getCurrentUserProfileFlow().collect { userState ->
+                val unlockedIds = userState?.unlockedTreeIds ?: listOf("default_oak")
+                val unlocked = allTrees.filter { it.id in unlockedIds }
+                
+                _uiState.update { currentState ->
+                    val finalUnlocked = if (unlocked.isEmpty()) listOf(TreeType.DEFAULT) else unlocked
+                    val isSelectedUnlocked = finalUnlocked.any { it.id == currentState.selectedTree.id }
+                    val currentSelectedTree = if (isSelectedUnlocked) {
+                        currentState.selectedTree
+                    } else {
+                        finalUnlocked.firstOrNull() ?: TreeType.DEFAULT
+                    }
+                    
+                    currentState.copy(
+                        userMoneyAmount = userState?.coins ?: 0,
+                        currentUserName = userState?.displayName ?: "placeholder",
+                        unlockedTrees = finalUnlocked,
+                        selectedTree = currentSelectedTree,
+                        selectedTreeImage = if (currentState.isTimerRunning) currentState.selectedTreeImage else currentSelectedTree.imageStaticSeed
+                    )
+                }
+            }
+        }
+    }
+
     fun toggleTimeDialog() {
-        _uiState.update { currentState -> currentState.copy(showTimeDialog = !currentState.showTimeDialog)}
+        _uiState.update { it.copy(showTimeDialog = !it.showTimeDialog)}
     }
     fun toggleRationaleDialog() {
-        _uiState.update { currentState -> currentState.copy(showRationaleDialog = !currentState.showRationaleDialog)}
+        _uiState.update { it.copy(showRationaleDialog = !it.showRationaleDialog)}
+    }
+    fun toggleUsageStatsRationaleDialog() {
+        _uiState.update { it.copy(showUsageStatsRationaleDialog = !it.showUsageStatsRationaleDialog)}
+
     }
     fun updateTimeDialogValue(value: String) {
-        _uiState.update { currentState -> currentState.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
+        _uiState.update { it.copy(dialogTimeValue = value.toIntOrNull() ?: 0) }
     }
 
     fun updateSelectedTree(value: TreeType) {
-        sessionRepository.setTreeId(value.id)
-        _uiState.update { currentState -> currentState.copy(selectedTree = value) }
+        timerManager.setTree(value)
+        _uiState.update { it.copy(selectedTree = value) }
         updateSelectedTreeImage(value.imageStaticSeed)
     }
 
     fun updateSelectedTreeImage(value: Int) {
-        _uiState.update { currentState -> currentState.copy(selectedTreeImage = value) }
+        _uiState.update { it.copy(selectedTreeImage = value) }
     }
     fun toggleDeepFocus() {
-        _uiState.update { currentState -> currentState.copy(isDeepFocusEnabled = !currentState.isDeepFocusEnabled)}
+        _uiState.update { it.copy(isDeepFocusEnabled = !it.isDeepFocusEnabled)}
+        timerManager.toggleDeepMode()
     }
 
     fun setTimer() {
-         sessionRepository.setTimer(_uiState.value.dialogTimeValue)
+         timerManager.setTimer(_uiState.value.dialogTimeValue)
     }
 
     fun startTimerService(context: Context) {
@@ -115,7 +165,6 @@ class PomodoroViewModel(
         context.startService(intent)
     }
 
-
     private fun onTimerFailed() {
         _uiState.update { it.copy(selectedTreeImage = R.drawable.dead_tree)}
     }
@@ -137,8 +186,14 @@ class PomodoroViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as GreenFocusApp)
-                val sessionRepository = application.container.sessionRepository
-                PomodoroViewModel(sessionRepository = sessionRepository)
+                val timerManager = application.container.timerManager
+                val userRepository = application.container.userRepository
+                val forestRepository = application.container.forestRepository
+                PomodoroViewModel(
+                    timerManager = timerManager,
+                    userRepository = userRepository,
+                    forestRepository = forestRepository
+                )
             }
         }
     }

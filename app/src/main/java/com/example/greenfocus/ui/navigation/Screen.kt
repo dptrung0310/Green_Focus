@@ -15,4 +15,10 @@ sealed class Screen(val route: String) {
     object Store    : Screen("store")
     object Social   : Screen("social")
     object Profile  : Screen("profile")
+    object Settings : Screen("settings")
+
+    // Team Room
+    object TeamRoom : Screen("team_room/{roomId}") {
+        fun createRoute(roomId: String) = "team_room/$roomId"
+    }
 }

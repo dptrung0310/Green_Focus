@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.gms.google-services")
+    kotlin("plugin.serialization") version "2.3.20"
 }
 
 android {
@@ -47,6 +48,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")  // Database chính
     implementation("com.google.firebase:firebase-database")   // Realtime cho Group
     implementation("com.google.firebase:firebase-storage")    // Lưu ảnh/3D
+    implementation("com.google.firebase:firebase-messaging")  // FCM Push Notification
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation(libs.androidx.core.ktx)
@@ -57,8 +59,14 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.camera.core)
+    implementation("androidx.compose.material:material-icons-extended") // Thêm để dùng PersonAdd, ContentCopy
+    implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation(libs.androidx.lifecycle.service) // WorkManager
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0") // Kotlin Serialization for JSON
+    implementation("io.coil-kt:coil-compose:2.4.0") // Coil
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -66,5 +74,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-
 }

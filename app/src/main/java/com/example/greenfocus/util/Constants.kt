@@ -3,7 +3,7 @@ package com.example.greenfocus.util
 object FirestoreCollections {
     const val USERS = "users"
     const val TREES = "trees_catalog"     // Danh mục cây trong shop
-    const val SESSIONS = "focus_sessions"  // Nhật ký trồng cây (để vẽ biểu đồ)
+    const val SESSIONS = "sessions"  // Nhật ký trồng cây (để vẽ biểu đồ)
     const val FRIEND_REQUESTS = "friend_requests"
     const val CHATS = "chats"             // Lưu nội dung tin nhắn
 }

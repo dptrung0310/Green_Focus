@@ -19,15 +19,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.ui.theme.*
 
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
+    onSettingNavigate: () -> Unit,
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -73,7 +76,7 @@ fun ProfileScreen(
                 ) {
                     Text("Profile", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     IconButton(
-                        onClick = { /* Settings */ },
+                        onClick = { onSettingNavigate() },
                         modifier = Modifier
                             .background(Color.White.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
                     ) {
@@ -201,7 +204,7 @@ fun ProfileScreen(
             ) {
                 Column {
                     TextButton(
-                        onClick = { /* Settings */ },
+                        onClick = { onSettingNavigate() },
                         modifier = Modifier.fillMaxWidth().padding(8.dp),
                         contentPadding = PaddingValues(16.dp)
                     ) {

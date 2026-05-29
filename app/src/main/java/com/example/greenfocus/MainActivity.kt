@@ -63,8 +63,8 @@ class MainActivity : ComponentActivity() {
         Log.d("MainActivity", "Handling intent with type: $type")
         
         if (type == "friend_request" || type == "room_invite") {
-            // Signal navigation to main screen to route to social tab
-            NotificationNavigationManager.setPendingRoute("social")
+            // Open the app on Home for both request and room-invite notifications.
+            NotificationNavigationManager.setPendingRoute("home")
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.greenfocus.ui.screen.main
+﻿package com.example.greenfocus.ui.screen.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -9,21 +9,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.ui.components.BottomNavBar
 import com.example.greenfocus.ui.navigation.Screen
 import com.example.greenfocus.ui.screen.PlaceholderScreen
 import com.example.greenfocus.ui.screen.forest.ForestScreen
 import com.example.greenfocus.ui.screen.pomodoro.PomodoroScreen
+import com.example.greenfocus.ui.screen.pomodoro.HomeRoomViewModel
 import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
-import com.example.greenfocus.ui.screen.social.TeamRoomScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.LaunchedEffect
@@ -43,6 +41,7 @@ fun MainScreen(
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
     val soundManager = (LocalContext.current.applicationContext as GreenFocusApp).container.soundManager
     val timerManager = (LocalContext.current.applicationContext as GreenFocusApp).container.timerManager
+    val homeRoomViewModel: HomeRoomViewModel = viewModel()
     val timerState by timerManager.timerState.collectAsState()
     val isTimerRunning = timerState.isTimerRunning
 
@@ -93,7 +92,7 @@ fun MainScreen(
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
-                PomodoroScreen()
+                PomodoroScreen(homeRoomViewModel = homeRoomViewModel)
             }
             composable(Screen.Forest.route) {
                 ForestScreen()
@@ -110,8 +109,15 @@ fun MainScreen(
             }
             composable(Screen.Social.route) {
                 SocialScreen(
-                    onNavigateToTeamRoom = { roomId ->
-                        innerNavController.navigate(Screen.TeamRoom.createRoute(roomId))
+                    homeRoomViewModel = homeRoomViewModel,
+                    onNavigateToHome = {
+                        innerNavController.navigate(Screen.Home.route) {
+                            popUpTo(innerNavController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
@@ -119,16 +125,6 @@ fun MainScreen(
                 ProfileScreen(
                     onLogout = onLogout,
                     onSettingNavigate = onSettingNavigate)
-            }
-            composable(
-                route = "team_room/{roomId}",
-                arguments = listOf(navArgument("roomId") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val roomId = backStackEntry.arguments?.getString("roomId") ?: ""
-                TeamRoomScreen(
-                    roomId = roomId,
-                    onBack = { innerNavController.popBackStack() }
-                )
             }
         }
     }

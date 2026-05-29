@@ -141,6 +141,13 @@ class PomodoroViewModel(
         timerManager.toggleDeepMode()
     }
 
+    fun setTimerMinutes(minutes: Int) {
+        if (_uiState.value.isTimerRunning) return
+        val safeMinutes = minutes.coerceAtLeast(1)
+        _uiState.update { it.copy(dialogTimeValue = safeMinutes) }
+        timerManager.setTimer(safeMinutes)
+    }
+
     fun setTimer() {
          timerManager.setTimer(_uiState.value.dialogTimeValue)
     }

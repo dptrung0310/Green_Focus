@@ -48,6 +48,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")  // Database chính
     implementation("com.google.firebase:firebase-database")   // Realtime cho Group
     implementation("com.google.firebase:firebase-storage")    // Lưu ảnh/3D
+    implementation("com.google.firebase:firebase-messaging")  // FCM Push Notification
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation(libs.androidx.core.ktx)

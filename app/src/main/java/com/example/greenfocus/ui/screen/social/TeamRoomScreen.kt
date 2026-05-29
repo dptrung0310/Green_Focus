@@ -72,6 +72,7 @@ fun TeamRoomScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showInviteDialog by remember { mutableStateOf(false) }
+    var pendingInviteIds by remember(roomId) { mutableStateOf(setOf<String>()) }
 
     LaunchedEffect(roomId) {
         teamRoomViewModel.bindRoom(roomId)
@@ -125,6 +126,16 @@ fun TeamRoomScreen(
         treeId = roomTreeId,
         unlockedTrees = pomodoroUiState.unlockedTrees
     )
+    val invitedIds = teamRoomUiState.roomInvites
+        .mapNotNull { invite -> invite.toUid.takeIf { it.isNotBlank() } }
+        .toSet()
+    val disabledInviteIds = invitedIds + pendingInviteIds
+
+    LaunchedEffect(invitedIds) {
+        if (pendingInviteIds.isNotEmpty()) {
+            pendingInviteIds = pendingInviteIds - invitedIds
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -397,8 +408,16 @@ fun TeamRoomScreen(
         val availableFriends = friends.filter { it.uid !in memberIds }
         InviteFriendDialog(
             friends = availableFriends,
+            invitedIds = disabledInviteIds,
             onInvite = { friend ->
-                scope.launch { socialViewModel.sendRoomInvite(friend.uid, roomId) }
+                if (disabledInviteIds.contains(friend.uid)) return@InviteFriendDialog
+                pendingInviteIds = pendingInviteIds + friend.uid
+                scope.launch {
+                    val result = socialViewModel.sendRoomInvite(friend.uid, roomId)
+                    if (result.isFailure) {
+                        pendingInviteIds = pendingInviteIds - friend.uid
+                    }
+                }
             },
             onDismiss = { showInviteDialog = false }
         )
@@ -457,6 +476,7 @@ private fun TeamMembersRow(members: List<TeamMember>) {
 @Composable
 private fun InviteFriendDialog(
     friends: List<User>,
+    invitedIds: Set<String>,
     onInvite: (User) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -478,6 +498,7 @@ private fun InviteFriendDialog(
                     contentPadding = PaddingValues(horizontal = 8.dp)
                 ) {
                     items(friends) { friend ->
+                        val isInvited = invitedIds.contains(friend.uid)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.width(92.dp)
@@ -499,9 +520,10 @@ private fun InviteFriendDialog(
                             Spacer(modifier = Modifier.height(6.dp))
                             Button(
                                 onClick = { onInvite(friend) },
+                                enabled = !isInvited,
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                             ) {
-                                Text("Mời")
+                                Text(if (isInvited) "Đã mời" else "Mời")
                             }
                         }
                     }

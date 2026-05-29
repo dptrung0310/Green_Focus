@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 data class TeamRoomUiState(
     val room: TeamRoom? = null,
     val members: List<TeamMember> = emptyList(),
+    val roomInvites: List<TeamInvite> = emptyList(),
     val isHost: Boolean = false,
     val durationMs: Long = DEFAULT_ROOM_DURATION_MS,
     val remainingMs: Long = DEFAULT_ROOM_DURATION_MS,
@@ -66,10 +67,11 @@ class TeamRoomViewModel(
         observeJob = viewModelScope.launch {
             combine(
                 teamRoomRepository.observeRoom(id),
-                teamRoomRepository.observeMembers(id)
-            ) { room, members ->
-                room to members
-            }.collect { (room, members) ->
+                teamRoomRepository.observeMembers(id),
+                teamRoomRepository.observeRoomInvites(id)
+            ) { room, members, invites ->
+                Triple(room, members, invites)
+            }.collect { (room, members, invites) ->
                 val uid = currentUser?.uid ?: FirebaseModule.auth.currentUser?.uid
                 val isHost = room?.hostId == uid && !uid.isNullOrBlank()
                 val durationMs = room?.durationMs ?: DEFAULT_ROOM_DURATION_MS
@@ -79,6 +81,7 @@ class TeamRoomViewModel(
                     it.copy(
                         room = room,
                         members = members,
+                        roomInvites = invites,
                         isHost = isHost,
                         durationMs = durationMs,
                         focusLostMessage = focusLostMessage,

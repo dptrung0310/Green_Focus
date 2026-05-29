@@ -1,4 +1,4 @@
-﻿package com.example.greenfocus.ui.screen.main
+package com.example.greenfocus.ui.screen.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -26,6 +26,9 @@ import com.example.greenfocus.ui.screen.social.SocialScreen
 import com.example.greenfocus.ui.screen.social.TeamRoomScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.LaunchedEffect
+import com.example.greenfocus.fcm.FcmTokenManager
+import com.example.greenfocus.util.NotificationNavigationManager
 import com.example.greenfocus.ui.screen.store.StoreViewModel
 import com.example.greenfocus.util.Sound
 
@@ -34,6 +37,7 @@ fun MainScreen(
     onLogout: () -> Unit,
     onSettingNavigate: () -> Unit
 ) {
+    val context = LocalContext.current
     val innerNavController = rememberNavController()
     val navBackStackEntry by innerNavController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route ?: Screen.Home.route
@@ -41,6 +45,27 @@ fun MainScreen(
     val timerManager = (LocalContext.current.applicationContext as GreenFocusApp).container.timerManager
     val timerState by timerManager.timerState.collectAsState()
     val isTimerRunning = timerState.isTimerRunning
+
+    // Update FCM token on successful login/startup entry
+    LaunchedEffect(Unit) {
+        FcmTokenManager.updateTokenInFirestore(context)
+    }
+
+    // Observe and perform pending notification clicks for dynamic redirection
+    LaunchedEffect(Unit) {
+        NotificationNavigationManager.pendingRoute.collect { route ->
+            if (route != null) {
+                innerNavController.navigate(route) {
+                    popUpTo(innerNavController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+                NotificationNavigationManager.clearPendingRoute()
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {

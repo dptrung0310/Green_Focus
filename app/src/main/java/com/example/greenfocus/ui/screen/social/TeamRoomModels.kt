@@ -38,5 +38,6 @@ data class TeamInvite(
     val roomId: String = "",
     val fromUid: String = "",
     val fromName: String = "",
+    val toUid: String = "",
     val createdAt: Timestamp? = null
 )

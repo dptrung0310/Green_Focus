@@ -76,8 +76,14 @@ class SocialViewModel(
                 .map { it?.uid }
                 .distinctUntilChanged()
                 .flatMapLatest { uid ->
-                    if (uid == null) flowOf(emptyList()) else teamRoomRepository.observeInvites(uid)
+                    if (uid == null) {
+                        flowOf(emptyList())
+                    } else {
+                        teamRoomRepository.observeInvites(uid)
+                            .catch { emit(emptyList()) }
+                    }
                 }
+                .catch { emit(emptyList()) }
                 .collect { invites ->
                     _inviteList.value = invites
                     cleanupInvalidInvites(invites)
@@ -86,12 +92,16 @@ class SocialViewModel(
     }
 
     private fun cleanupInvalidInvites(invites: List<TeamInvite>) {
-        val uid = FirebaseModule.auth.currentUser?.uid ?: return
         viewModelScope.launch {
             invites.forEach { invite ->
+                val uid = FirebaseModule.auth.currentUser?.uid ?: return@forEach
+                if (invite.roomId.isBlank()) {
+                    teamRoomRepository.deleteInviteForUser(uid, invite)
+                    return@forEach
+                }
                 val exists = teamRoomRepository.roomExists(invite.roomId)
                 if (!exists) {
-                    teamRoomRepository.deleteInvite(uid, invite.id)
+                    teamRoomRepository.deleteInviteForUser(uid, invite)
                 }
             }
         }
@@ -154,7 +164,7 @@ class SocialViewModel(
     suspend fun sendRoomInvite(friendUid: String, roomId: String): Result<Unit> {
         val currentUser = (uiState.value as? SocialUiState.Success)?.currentUser
             ?: return Result.failure(IllegalStateException("User not logged in"))
-        return teamRoomRepository.sendInvite(friendUid, roomId, currentUser)
+        return teamRoomRepository.sendInvite(roomId, friendUid, currentUser)
     }
 
     suspend fun acceptInvite(invite: TeamInvite): Result<Unit> {
@@ -162,16 +172,16 @@ class SocialViewModel(
         if (joinResult.isSuccess) {
             val uid = FirebaseModule.auth.currentUser?.uid
             if (uid != null) {
-                teamRoomRepository.deleteInvite(uid, invite.id)
+                teamRoomRepository.deleteInviteForUser(uid, invite)
             }
         }
         return joinResult
     }
 
-    fun deleteInvite(inviteId: String) {
-        val uid = FirebaseModule.auth.currentUser?.uid ?: return
+    fun deleteInvite(invite: TeamInvite) {
         viewModelScope.launch {
-            teamRoomRepository.deleteInvite(uid, inviteId)
+            val uid = FirebaseModule.auth.currentUser?.uid ?: return@launch
+            teamRoomRepository.deleteInviteForUser(uid, invite)
         }
     }
 

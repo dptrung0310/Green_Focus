@@ -17,7 +17,8 @@ class TeamRoomRepository(
 
     private fun roomDoc(roomId: String) = roomsCollection.document(roomId)
     private fun membersCol(roomId: String) = roomDoc(roomId).collection("members")
-    private fun invitesCol(uid: String) = db.collection("users").document(uid).collection("invites")
+    private fun roomInvitesCol(roomId: String) = roomDoc(roomId).collection("invites")
+    private fun legacyInvitesCol(uid: String) = db.collection("users").document(uid).collection("invites")
 
     suspend fun createRoom(roomId: String, host: User): Result<Unit> = runCatching {
         val roomData = mapOf(
@@ -73,11 +74,18 @@ class TeamRoomRepository(
         val remainingMembers = members.filter { member -> member.uid != userId }
 
         val batch = db.batch()
-        batch.delete(membersRef.document(userId))
 
         if (remainingMembers.isEmpty()) {
+            membersSnapshot.documents.forEach { doc ->
+                batch.delete(doc.reference)
+            }
+            val inviteSnapshot = roomInvitesCol(roomId).get().await()
+            inviteSnapshot.documents.forEach { doc ->
+                batch.delete(doc.reference)
+            }
             batch.delete(roomRef)
         } else {
+            batch.delete(membersRef.document(userId))
             val hostId = roomSnapshot.getString("hostId") ?: ""
             if (hostId == userId) {
                 val newHost = remainingMembers
@@ -132,19 +140,43 @@ class TeamRoomRepository(
         }.await()
     }
 
-    suspend fun sendInvite(friendUid: String, roomId: String, fromUser: User): Result<Unit> = runCatching {
-        val inviteRef = invitesCol(friendUid).document()
+    suspend fun sendInvite(roomId: String, friendUid: String, fromUser: User): Result<Unit> = runCatching {
+        val existing = roomInvitesCol(roomId)
+            .whereEqualTo("toUid", friendUid)
+            .limit(1)
+            .get()
+            .await()
+        if (!existing.isEmpty) return@runCatching
+
+        val inviteRef = roomInvitesCol(roomId).document()
+        val inviteId = inviteRef.id
         val inviteData = mapOf(
             "roomId" to roomId,
             "fromUid" to fromUser.uid,
             "fromName" to fromUser.displayName,
+            "toUid" to friendUid,
             "createdAt" to FieldValue.serverTimestamp()
         )
-        inviteRef.set(inviteData).await()
+        
+        db.runBatch { batch ->
+            batch.set(roomInvitesCol(roomId).document(inviteId), inviteData)
+            batch.set(legacyInvitesCol(friendUid).document(inviteId), inviteData)
+        }.await()
     }
 
-    suspend fun deleteInvite(uid: String, inviteId: String): Result<Unit> = runCatching {
-        invitesCol(uid).document(inviteId).delete().await()
+    suspend fun deleteInvite(roomId: String, inviteId: String): Result<Unit> = runCatching {
+        roomInvitesCol(roomId).document(inviteId).delete().await()
+    }
+
+    suspend fun deleteInviteForUser(uid: String, invite: TeamInvite): Result<Unit> = runCatching {
+        val batch = db.batch()
+        if (invite.roomId.isNotBlank() && invite.id.isNotBlank()) {
+            batch.delete(roomInvitesCol(invite.roomId).document(invite.id))
+        }
+        if (invite.id.isNotBlank()) {
+            batch.delete(legacyInvitesCol(uid).document(invite.id))
+        }
+        batch.commit().await()
     }
 
     suspend fun roomExists(roomId: String): Boolean {
@@ -181,17 +213,68 @@ class TeamRoomRepository(
         awaitClose { listener.remove() }
     }
 
-    fun observeInvites(uid: String): Flow<List<TeamInvite>> = callbackFlow {
-        val listener = invitesCol(uid).addSnapshotListener { snapshot, error ->
+    fun observeRoomInvites(roomId: String): Flow<List<TeamInvite>> = callbackFlow {
+        val listener = roomInvitesCol(roomId).addSnapshotListener { snapshot, error ->
             if (error != null) {
                 close(error)
                 return@addSnapshotListener
             }
             val invites = snapshot?.documents?.mapNotNull { doc ->
-                doc.toObject(TeamInvite::class.java)?.copy(id = doc.id)
+                val invite = doc.toObject(TeamInvite::class.java) ?: return@mapNotNull null
+                invite.copy(id = doc.id, roomId = invite.roomId.ifBlank { roomId })
             } ?: emptyList()
             trySend(invites)
         }
         awaitClose { listener.remove() }
+    }
+
+    fun observeInvites(uid: String): Flow<List<TeamInvite>> = callbackFlow {
+        var roomInvites: List<TeamInvite> = emptyList()
+        var legacyInvites: List<TeamInvite> = emptyList()
+
+        val query = db.collectionGroup("invites").whereEqualTo("toUid", uid)
+        val roomListener = query.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("TeamRoomRepository", "Error observing room invites via collectionGroup: ${error.message}", error)
+                return@addSnapshotListener
+            }
+            val invites = snapshot?.documents?.mapNotNull { doc ->
+                val invite = doc.toObject(TeamInvite::class.java) ?: return@mapNotNull null
+                val resolvedRoomId = invite.roomId.ifBlank {
+                    doc.reference.parent.parent?.id.orEmpty()
+                }
+                invite.copy(id = doc.id, roomId = resolvedRoomId)
+            } ?: emptyList()
+            roomInvites = invites
+            trySend(mergeInvites(roomInvites, legacyInvites))
+        }
+        val legacyListener = legacyInvitesCol(uid).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                android.util.Log.e("TeamRoomRepository", "Error observing legacy invites: ${error.message}", error)
+                return@addSnapshotListener
+            }
+            val invites = snapshot?.documents?.mapNotNull { doc ->
+                val invite = doc.toObject(TeamInvite::class.java) ?: return@mapNotNull null
+                invite.copy(
+                    id = doc.id,
+                    toUid = invite.toUid.ifBlank { uid }
+                )
+            } ?: emptyList()
+            legacyInvites = invites
+            trySend(mergeInvites(roomInvites, legacyInvites))
+        }
+        awaitClose {
+            roomListener.remove()
+            legacyListener.remove()
+        }
+    }
+
+    private fun mergeInvites(
+        roomInvites: List<TeamInvite>,
+        legacyInvites: List<TeamInvite>
+    ): List<TeamInvite> {
+        return (roomInvites + legacyInvites)
+            .distinctBy { "${it.roomId}|${it.fromUid}|${it.toUid}" }
+            .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
     }
 }

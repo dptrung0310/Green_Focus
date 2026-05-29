@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.di.FirebaseModule
+import com.example.greenfocus.fcm.FcmTokenManager
 import com.example.greenfocus.ui.screen.auth.AuthViewModel
 import com.example.greenfocus.ui.screen.auth.LoginScreen
 import com.example.greenfocus.ui.screen.auth.OpeningScreen
@@ -90,6 +91,9 @@ fun SetupNavGraph(navController: NavHostController) {
                     }
 
 
+                    // Delete FCM token from Firestore before logging out
+                    FcmTokenManager.deleteTokenFromFirestore(context)
+                    
                     FirebaseModule.auth.signOut()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }

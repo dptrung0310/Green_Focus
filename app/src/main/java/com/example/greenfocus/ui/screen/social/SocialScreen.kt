@@ -162,7 +162,7 @@ fun SocialScreen(
                 }
             },
             onDismissInvite = { invite ->
-                viewModel.deleteInvite(invite.id)
+                viewModel.deleteInvite(invite)
             },
             onDismiss = {
                 inviteErrorMessage = null

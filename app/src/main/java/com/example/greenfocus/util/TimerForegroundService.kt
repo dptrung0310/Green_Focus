@@ -100,6 +100,15 @@ class TimerForegroundService : LifecycleService() {
         return START_STICKY
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        if (timerManager.timerState.value.isTimerRunning) {
+            timerManager.pauseTimer()
+        }
+        stopForeground(true)
+        stopSelf()
+    }
+
     // --- THE CHRONOMETER NOTIFICATION ---
     private fun buildChronometerNotification(targetTimeMillis: Long): Notification {
         val clickIntent = Intent(this, MainActivity::class.java).apply {

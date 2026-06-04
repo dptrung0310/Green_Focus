@@ -150,7 +150,7 @@ fun AuthTreeLogo(modifier: Modifier = Modifier) {
             // <circle cx="27" cy="20" r="4" fill="currentColor" opacity="0.8"/>
             drawCircle(color = Color.White.copy(alpha = 0.8f), radius = 4f * scaleX, center = Offset(27f * scaleX, 20f * scaleY))
             // <circle cx="20" cy="28" r="5" fill="currentColor" opacity="0.9"/>
-            drawCircle(color = Color.White.copy(alpha = 0.9f), radius = 5f * scaleX, center = Offset(20f * scaleX, 28f * scaleY))
+            drawCircle(color = Color.White, radius = 5f * scaleX, center = Offset(20f * scaleX, 28f * scaleY))
             // <rect x="19" y="32" width="2" height="8" fill="currentColor"/>
             drawRect(
                 color = Color.White,

@@ -95,7 +95,7 @@ fun TeamRoomScreen(
             override fun onActivityPaused(activity: android.app.Activity) = Unit
             override fun onActivityStopped(activity: android.app.Activity) {
                 startedCount = (startedCount - 1).coerceAtLeast(0)
-                if (startedCount == 0) {
+                if (startedCount == 0 && activity.isFinishing && !activity.isChangingConfigurations) {
                     teamRoomViewModel.leaveRoom()
                 }
             }
@@ -168,6 +168,35 @@ fun TeamRoomScreen(
                     contentDescription = "Back",
                     tint = Color(0xFF2E7D32)
                 )
+            }
+
+            AnimatedVisibility(
+                visible = !teamRoomUiState.isRunning,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "ID Room: $roomId",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = { clipboardManager.setText(AnnotatedString(roomId)) },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy ID",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
             }
 
             IconButton(onClick = { showInviteDialog = true }) {
@@ -328,36 +357,7 @@ fun TeamRoomScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // 6. Room ID Display
-        AnimatedVisibility(
-            visible = !teamRoomUiState.isRunning,
-            enter = fadeIn(),
-            exit = fadeOut()
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Text(
-                    text = "ID Room: $roomId",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Gray
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = { clipboardManager.setText(AnnotatedString(roomId)) },
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy ID",
-                        tint = Color.Gray,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        }
+        
 
         // 7. Start / Waiting State
         if (!teamRoomUiState.isRunning) {

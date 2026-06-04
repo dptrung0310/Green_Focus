@@ -162,8 +162,8 @@ fun RoomInviteRow(
                 color = Color.Gray
             )
         }
-        TextButton(onClick = onJoin) {
-            Text("Vào phòng", color = Color(0xFF2E7D32))
+        IconButton(onClick = onJoin) {
+            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
         }
         IconButton(onClick = onDismiss) {
             Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Red)

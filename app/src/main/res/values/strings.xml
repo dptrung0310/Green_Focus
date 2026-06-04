@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">GreenFocus</string>
     <string name="pomodoro_username">Xin chào %1$s</string>
+    <string name="home_hello">Xin chào</string>
+    <string name="home_waiting_host">Đang chờ chủ phòng bắt đầu...</string>
+    <string name="home_reward_format">Hoàn thành để kiếm được: %1$d xu</string>
     <string name="pomodoro_timer_dialog">Hãy nhập số phút</string>
     <string name="pomodoro_deep_mode_button">Bật chế độ "Tập trung sâu"</string>
     <string name="pomodoro_start_button">BẮT ĐẦU</string>

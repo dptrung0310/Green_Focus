@@ -16,11 +16,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.greenfocus.data.model.FriendRequest
+import com.example.greenfocus.ui.screen.pomodoro.HomeRoomViewModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun SocialScreen(
-    onNavigateToTeamRoom: (String) -> Unit = {},
+    homeRoomViewModel: HomeRoomViewModel = viewModel(),
+    onNavigateToHome: () -> Unit = {},
     viewModel: SocialViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableStateOf("Leaderboard") }
@@ -87,7 +89,7 @@ fun SocialScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val tabs = listOf("Leaderboard", "Friend", "Team")
+            val tabs = listOf("Leaderboard", "Friend")
             tabs.forEach { tab ->
                 val isSelected = selectedTab == tab
                 Button(
@@ -124,10 +126,6 @@ fun SocialScreen(
                             friends = state.friends,
                             viewModel = viewModel
                         )
-                        "Team" -> TeamScreen(
-                            onNavigateToRoom = onNavigateToTeamRoom,
-                            viewModel = viewModel
-                        )
                     }
                 }
                 is SocialUiState.Error -> {
@@ -152,10 +150,11 @@ fun SocialScreen(
             onJoinRoomInvite = { invite ->
                 inviteErrorMessage = null
                 scope.launch {
-                    val result = viewModel.acceptInvite(invite)
+                    val result = homeRoomViewModel.joinRoom(invite.roomId)
                     if (result.isSuccess) {
+                        viewModel.deleteInvite(invite)
                         showRequestsDialog = false
-                        onNavigateToTeamRoom(invite.roomId)
+                        onNavigateToHome()
                     } else {
                         inviteErrorMessage = result.exceptionOrNull()?.message ?: "Không thể vào phòng"
                     }

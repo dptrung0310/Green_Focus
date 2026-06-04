@@ -4,6 +4,7 @@ import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.model.User
 import com.example.greenfocus.di.FirebaseModule
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -20,13 +21,18 @@ class TeamRoomRepository(
     private fun roomInvitesCol(roomId: String) = roomDoc(roomId).collection("invites")
     private fun legacyInvitesCol(uid: String) = db.collection("users").document(uid).collection("invites")
 
-    suspend fun createRoom(roomId: String, host: User): Result<Unit> = runCatching {
+    suspend fun createRoom(
+        roomId: String,
+        host: User,
+        treeId: String = TreeType.DEFAULT.id,
+        durationMs: Long = DEFAULT_ROOM_DURATION_MS
+    ): Result<Unit> = runCatching {
         val roomData = mapOf(
             "status" to ROOM_STATUS_WAITING,
             "hostId" to host.uid,
             "startedAt" to null,
-            "durationMs" to DEFAULT_ROOM_DURATION_MS,
-            "treeId" to TreeType.DEFAULT.id,
+            "durationMs" to durationMs,
+            "treeId" to treeId,
             "focusLostAt" to null
         )
         val memberData = mapOf(
@@ -99,6 +105,32 @@ class TeamRoomRepository(
         batch.commit().await()
     }
 
+    suspend fun deleteRoom(roomId: String): Result<Unit> = runCatching {
+        val roomRef = roomDoc(roomId)
+        val membersSnapshot = membersCol(roomId).get().await()
+        val invitesSnapshot = roomInvitesCol(roomId).get().await()
+
+        val documentRefs = buildList<DocumentReference> {
+            add(roomRef)
+            membersSnapshot.documents.forEach { add(it.reference) }
+            invitesSnapshot.documents.forEach { inviteDoc ->
+                add(inviteDoc.reference)
+                val invite = inviteDoc.toObject(TeamInvite::class.java)
+                val inviteId = inviteDoc.id
+                val invitedUid = invite?.toUid.orEmpty()
+                if (invitedUid.isNotBlank() && inviteId.isNotBlank()) {
+                    add(legacyInvitesCol(invitedUid).document(inviteId))
+                }
+            }
+        }.distinctBy { it.path }
+
+        documentRefs.chunked(400).forEach { chunk ->
+            val batch = db.batch()
+            chunk.forEach { ref -> batch.delete(ref) }
+            batch.commit().await()
+        }
+    }
+
     suspend fun startRoom(roomId: String, durationMs: Long): Result<Unit> = runCatching {
         roomDoc(roomId).update(
             mapOf(
@@ -112,6 +144,19 @@ class TeamRoomRepository(
 
     suspend fun updateRoomTree(roomId: String, treeId: String): Result<Unit> = runCatching {
         roomDoc(roomId).update("treeId", treeId).await()
+    }
+
+    suspend fun updateRoomDuration(roomId: String, durationMs: Long): Result<Unit> = runCatching {
+        roomDoc(roomId).update("durationMs", durationMs).await()
+    }
+
+    suspend fun setRoomStatusWaiting(roomId: String): Result<Unit> = runCatching {
+        roomDoc(roomId).update(
+            mapOf(
+                "status" to ROOM_STATUS_WAITING,
+                "startedAt" to FieldValue.delete()
+            )
+        ).await()
     }
 
     suspend fun resetRoomToWaiting(roomId: String): Result<Unit> = runCatching {

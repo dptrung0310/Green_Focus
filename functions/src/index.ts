@@ -61,6 +61,7 @@ async function sendToUserDevices(
       android: {
         priority: "high",
         notification: {
+          icon: "ic_greenfocus_noti",
           sound: "default",
           defaultSound: true,
           defaultVibrateTimings: true,
@@ -133,7 +134,7 @@ export const onFriendRequestCreated = functions.firestore
     const fromName = fromDisplayName || "Someone";
     const payload: NotificationPayload = {
       notification: {
-        title: "New friend request ðŸŒ±",
+        title: "New Friend Request",
         body: `${fromName} sent you a friend request`,
       },
       data: {
@@ -167,7 +168,7 @@ export const onRoomInviteCreated = functions.firestore
     const displayName = fromName || "Someone";
     const payload: NotificationPayload = {
       notification: {
-        title: "Room invitation ðŸŒ¿",
+        title: "Room Invitation",
         body: `${displayName} invited you to join a room`,
       },
       data: {

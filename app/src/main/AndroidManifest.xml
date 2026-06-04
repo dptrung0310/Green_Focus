@@ -43,6 +43,13 @@
         android:roundIcon="@drawable/ic_greenfocus_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.GreenFocus">
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_greenfocus_noti" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/greenfocus_splash_background" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

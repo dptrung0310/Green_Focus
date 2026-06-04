@@ -1,6 +1,5 @@
 package com.example.greenfocus.util
 
-import android.R
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -16,6 +15,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.MainActivity
+import com.example.greenfocus.R
 import com.example.greenfocus.data.repository.UserSettingRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -126,7 +126,7 @@ class TimerForegroundService : LifecycleService() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Focus!")
-            .setSmallIcon(R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_greenfocus_noti)
 
             // The Magic Methods
             .setWhen(targetTimeMillis)
@@ -155,7 +155,7 @@ class TimerForegroundService : LifecycleService() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Focus Session Over. Collect your reward!")
-            .setSmallIcon(R.drawable.ic_dialog_info)
+            .setSmallIcon(R.drawable.ic_greenfocus_noti)
 
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
@@ -179,7 +179,7 @@ class TimerForegroundService : LifecycleService() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("DEEP MODE: You failed due to entering other apps!")
-            .setSmallIcon(R.drawable.ic_dialog_alert)
+            .setSmallIcon(R.drawable.ic_greenfocus_noti)
 
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)

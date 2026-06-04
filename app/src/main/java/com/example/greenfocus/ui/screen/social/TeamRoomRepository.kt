@@ -105,6 +105,21 @@ class TeamRoomRepository(
         batch.commit().await()
     }
 
+    suspend fun leaveAllRoomsForUser(userId: String): Result<Unit> = runCatching {
+        val memberSnapshots = db.collectionGroup("members")
+            .whereEqualTo("uid", userId)
+            .get()
+            .await()
+
+        val roomIds = memberSnapshots.documents.mapNotNull { memberDoc ->
+            memberDoc.reference.parent.parent?.id
+        }.distinct()
+
+        roomIds.forEach { roomId ->
+            leaveRoom(roomId, userId).getOrThrow()
+        }
+    }
+
     suspend fun deleteRoom(roomId: String): Result<Unit> = runCatching {
         val roomRef = roomDoc(roomId)
         val membersSnapshot = membersCol(roomId).get().await()

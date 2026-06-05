@@ -21,4 +21,7 @@ sealed class Screen(val route: String) {
     object TeamRoom : Screen("team_room/{roomId}") {
         fun createRoute(roomId: String) = "team_room/$roomId"
     }
+
+    // AR Forest
+    object ArForest : Screen("ar_forest")
 }

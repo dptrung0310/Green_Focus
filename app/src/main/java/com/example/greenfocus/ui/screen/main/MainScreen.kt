@@ -1,4 +1,4 @@
-﻿package com.example.greenfocus.ui.screen.main
+package com.example.greenfocus.ui.screen.main
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -33,7 +33,8 @@ import com.example.greenfocus.util.Sound
 @Composable
 fun MainScreen(
     onLogout: () -> Unit,
-    onSettingNavigate: () -> Unit
+    onSettingNavigate: () -> Unit,
+    onArForestNavigate: () -> Unit
 ) {
     val context = LocalContext.current
     val innerNavController = rememberNavController()
@@ -95,7 +96,9 @@ fun MainScreen(
                 PomodoroScreen(homeRoomViewModel = homeRoomViewModel)
             }
             composable(Screen.Forest.route) {
-                ForestScreen()
+                ForestScreen(
+                    onArForestNavigate = onArForestNavigate
+                )
             }
             composable(Screen.Stats.route) {
                 PlaceholderScreen(title = "Stats")

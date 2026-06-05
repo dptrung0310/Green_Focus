@@ -34,7 +34,6 @@ class ProdForestRepository(
     private val nameKeyToStringRes = mapOf(
         "tree_oak" to R.string.tree_oak,
         "tree_pine" to R.string.tree_pine,
-        "tree_cherry" to R.string.tree_cherry,
         "tree_maple" to R.string.tree_maple,
         "tree_palm" to R.string.tree_palm,
         "tree_cactus" to R.string.tree_cactus,
@@ -91,12 +90,8 @@ class ProdForestRepository(
 
         // 3. Merge: Firestore thắng nếu tồn tại
         return localTrees.map { tree ->
-            val override = firestoreOverrides[tree.id]
-            if (override != null) {
-                tree.copy(price = override.price ?: tree.price)
-            } else {
-                tree
-            }
+            // Bắt buộc đặt giá tiền bằng 1 theo yêu cầu để dễ test/mua cây
+            tree.copy(price = 1)
         }
     }
 

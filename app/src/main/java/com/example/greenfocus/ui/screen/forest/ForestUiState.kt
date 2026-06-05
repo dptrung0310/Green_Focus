@@ -8,5 +8,6 @@ data class ForestUiState (
     val currentDeadTree: Int = 0,
     val currentTotalTree: Int = 0,
     val currentFilter: ForestFilter = ForestFilter.ALL,
-    val treeList: List<FocusSession> = emptyList()
+    val treeList: List<FocusSession> = emptyList(),
+    val isLoaded: Boolean = false
 )

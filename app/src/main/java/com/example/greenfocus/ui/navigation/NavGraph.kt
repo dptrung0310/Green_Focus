@@ -20,6 +20,7 @@ import com.example.greenfocus.ui.screen.auth.SessionState
 import com.example.greenfocus.ui.screen.auth.SessionViewModel
 import com.example.greenfocus.ui.screen.main.MainScreen
 import com.example.greenfocus.ui.screen.profile.SettingsScreen
+import com.example.greenfocus.ui.screen.forest.ArForestScreen
 import com.example.greenfocus.util.TimerForegroundService
 
 @Composable
@@ -93,12 +94,21 @@ fun SetupNavGraph(navController: NavHostController) {
                 },
                 onSettingNavigate = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onArForestNavigate = {
+                    navController.navigate(Screen.ArForest.route)
                 }
             )
         }
 
         composable(route = Screen.Settings.route) {
             SettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = Screen.ArForest.route) {
+            ArForestScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

@@ -33,6 +33,7 @@ import com.example.greenfocus.R
 @Composable
 fun ForestScreen(
     modifier: Modifier = Modifier,
+    onArForestNavigate: () -> Unit,
     forestViewModel: ForestViewModel = viewModel(factory = ForestViewModel.Factory)
 ) {
     // 1. Safely collect the UI state from your ViewModel
@@ -57,7 +58,7 @@ fun ForestScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // --- View in AR Banner ---
-        ArBanner()
+        ArBanner(onClick = onArForestNavigate)
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -81,12 +82,13 @@ fun ForestScreen(
 }
 
 @Composable
-fun ArBanner() {
+fun ArBanner(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
+            .clickable { onClick() }
             .background(Color(0xFF388E3C)) // Medium Green
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,

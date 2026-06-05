@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.service) // WorkManager
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0") // Kotlin Serialization for JSON
     implementation("io.coil-kt:coil-compose:2.4.0") // Coil
+    implementation("com.google.ar:core:1.42.0") // ARCore
+    implementation("io.github.sceneview:arsceneview:4.16.10") // Sceneview AR
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

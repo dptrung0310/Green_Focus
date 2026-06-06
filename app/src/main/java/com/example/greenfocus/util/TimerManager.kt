@@ -122,13 +122,21 @@ class TimerManager(
     fun timerFinished(scope: CoroutineScope) {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
         val groupRoomId = activeRoomId
+        if (groupRoomId != null) {
+            Log.d(
+                "SESSION_REPO_TIMER",
+                "Group timer completed; waiting for room completion event $groupRoomId"
+            )
+            return
+        }
+
         dataRepository.addSession(FocusSession(
             treeId = _timerState.value.currentTree.id,
             startTime = System.currentTimeMillis(),
             durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
             status = "ALIVE",
-            isGroupSession = groupRoomId != null,
-            roomId = groupRoomId
+            isGroupSession = false,
+            roomId = null
         ))
         val durationSeconds = _timerState.value.totalTime.toLong()
         val durationMinutes = (durationSeconds / 60).toInt()

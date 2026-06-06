@@ -2,7 +2,6 @@ package com.example.greenfocus.data.repository
 
 import com.example.greenfocus.data.model.FriendRequest
 import com.example.greenfocus.data.model.User
-import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
 import com.google.firebase.firestore.FieldValue
@@ -208,7 +207,7 @@ class ProdUserRepository : UserRepository {
                 .document(uid).collection("user_sessions")
                 .get().await()
             
-            val sessions = sessionsSnapshot.toObjects(FocusSession::class.java)
+            val sessions = sessionsSnapshot.documents.map { it.toFocusSession() }
             val aliveCount = sessions.count { it.status == "ALIVE" }
             val totalFocusTimeSeconds = sessions.filter { it.status == "ALIVE" }
                 .sumOf { it.durationMinutes * 60L }

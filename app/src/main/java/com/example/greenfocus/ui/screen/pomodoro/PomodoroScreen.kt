@@ -751,6 +751,8 @@ private fun HomeRoomContent(
         .toSet()
     val disabledInviteIds = invitedIds + pendingInviteIds
     var handledFocusLostEventId by remember(roomState.activeRoomId) { mutableStateOf<String?>(null) }
+    var handledCompletedEventId by remember(roomState.activeRoomId) { mutableStateOf<String?>(null) }
+    var completionArmedStartedAtMs by remember(roomState.activeRoomId) { mutableStateOf<Long?>(null) }
 
     val timerScale by animateFloatAsState(
         targetValue = if (pomodoroUiState.isTimerRunning) 1.25f else 1.0f,
@@ -865,16 +867,69 @@ private fun HomeRoomContent(
         homeRoomViewModel.markFocusLostEventHandled(focusLostEventId)
     }
 
+    LaunchedEffect(
+        room?.completedEventId,
+        room?.completedAt,
+        roomState.currentUserId,
+        roomState.members
+    ) {
+        val completedAtMs = room?.completedAt?.toDate()?.time ?: return@LaunchedEffect
+        val completedEventId = room.completedEventId
+            ?: "${roomState.activeRoomId.orEmpty()}_completed_legacy_$completedAtMs"
+        if (handledCompletedEventId == completedEventId) return@LaunchedEffect
+
+        val currentUserId = roomState.currentUserId ?: return@LaunchedEffect
+        val currentMember = roomState.members.firstOrNull { it.uid == currentUserId }
+            ?: return@LaunchedEffect
+        if (currentMember.lastHandledCompletedEventId == completedEventId) {
+            handledCompletedEventId = completedEventId
+            return@LaunchedEffect
+        }
+
+        val joinedAtMs = currentMember.joinedAt?.toDate()?.time
+        if (joinedAtMs != null && joinedAtMs > completedAtMs) return@LaunchedEffect
+
+        handledCompletedEventId = completedEventId
+        if (pomodoroUiState.isTimerRunning) {
+            pomodoroViewModel.stopTimerService(
+                context = context,
+                markFailed = false,
+                resetSeconds = (room.durationMs / 1000L).toInt()
+            )
+        }
+        pomodoroViewModel.recordSuccessfulRoomSession(
+            completedEventId = completedEventId,
+            durationMinutes = durationMinutes,
+            treeId = room.treeId.ifBlank { activeTree.id },
+            roomId = roomState.activeRoomId
+        )
+        homeRoomViewModel.markCompletedEventHandled(completedEventId)
+    }
+
     LaunchedEffect(invitedIds) {
         if (pendingInviteIds.isNotEmpty()) {
             pendingInviteIds = pendingInviteIds - invitedIds
         }
     }
 
-    LaunchedEffect(pomodoroUiState.isTimerFinished, roomState.isHost, isStarted) {
+    LaunchedEffect(pomodoroUiState.isTimerRunning, isStarted, room?.startedAt) {
+        val startedAtMs = room?.startedAt?.toDate()?.time
+        if (pomodoroUiState.isTimerRunning && isStarted && startedAtMs != null) {
+            completionArmedStartedAtMs = startedAtMs
+        }
+    }
+
+    LaunchedEffect(pomodoroUiState.isTimerFinished, roomState.isHost, isStarted, room?.startedAt) {
         if (pomodoroUiState.isTimerFinished) {
-            if (roomState.isHost && isStarted) {
-                homeRoomViewModel.stopRoom()
+            val startedAtMs = room?.startedAt?.toDate()?.time
+            if (
+                roomState.isHost &&
+                isStarted &&
+                startedAtMs != null &&
+                completionArmedStartedAtMs == startedAtMs
+            ) {
+                completionArmedStartedAtMs = null
+                homeRoomViewModel.completeRoom()
             }
             pomodoroViewModel.resetAfterSession(durationMinutes)
         }

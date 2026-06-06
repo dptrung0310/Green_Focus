@@ -164,7 +164,15 @@ class PomodoroViewModel(
     fun setTimerMinutes(minutes: Int) {
         if (_uiState.value.isTimerRunning) return
         val safeMinutes = minutes.coerceAtLeast(1)
-        _uiState.update { it.copy(dialogTimeValue = safeMinutes) }
+        _uiState.update {
+            it.copy(
+                dialogTimeValue = safeMinutes,
+                isHalfDone = false,
+                isTimerFinished = false,
+                isTimerFailed = false,
+                selectedTreeImage = it.selectedTree.imageStaticSeed
+            )
+        }
         timerManager.setTimer(safeMinutes)
     }
 
@@ -182,6 +190,15 @@ class PomodoroViewModel(
 
     fun resetAfterSession(minutes: Int) {
         val safeMinutes = minutes.coerceAtLeast(1)
+        _uiState.update {
+            it.copy(
+                dialogTimeValue = safeMinutes,
+                isHalfDone = false,
+                isTimerFinished = false,
+                isTimerFailed = false,
+                selectedTreeImage = it.selectedTree.imageStaticSeed
+            )
+        }
         timerManager.setTimer(safeMinutes)
     }
 
@@ -237,6 +254,33 @@ class PomodoroViewModel(
                 selectedTreeImage = R.drawable.dead_tree,
                 isTimerFinished = false,
                 isTimerFailed = true
+            )
+        }
+    }
+
+    fun recordSuccessfulRoomSession(
+        completedEventId: String,
+        durationMinutes: Int,
+        treeId: String,
+        roomId: String?
+    ) {
+        dataRepository.setSession(
+            completedEventId,
+            FocusSession(
+                sessionId = completedEventId,
+                treeId = treeId,
+                startTime = System.currentTimeMillis(),
+                durationMinutes = durationMinutes.coerceAtLeast(1),
+                status = "ALIVE",
+                isGroupSession = roomId != null,
+                roomId = roomId
+            )
+        )
+        _uiState.update {
+            it.copy(
+                selectedTreeImage = it.selectedTree.imageStaticBig,
+                isTimerFinished = true,
+                isTimerFailed = false
             )
         }
     }

@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.channels.awaitClose
@@ -42,7 +43,7 @@ class ProdDataRepository : DataRepository{
 
         sessionDb.collection(FirestoreCollections.SESSIONS).document(uid).collection("user_sessions")
             .document(sessionId)
-            .set(session.copy(sessionId = sessionId))
+            .set(session.toFirestoreMap())
             .addOnSuccessListener {
                 Log.d("ProdDataRepository", "Session saved with fixed ID: $sessionId")
             }
@@ -72,7 +73,7 @@ class ProdDataRepository : DataRepository{
                 }
 
                 if (snapshot != null) {
-                    val sessions = snapshot.toObjects(FocusSession::class.java)
+                    val sessions = snapshot.documents.map { it.toFocusSession() }
                     trySend(sessions)
                 } else {
                     trySend(emptyList())
@@ -84,4 +85,27 @@ class ProdDataRepository : DataRepository{
         }
     }
 
+}
+
+private fun FocusSession.toFirestoreMap(): Map<String, Any?> {
+    return mapOf(
+        "treeId" to treeId,
+        "startTime" to startTime,
+        "durationMinutes" to durationMinutes,
+        "status" to status,
+        "isGroupSession" to isGroupSession,
+        "roomId" to roomId
+    )
+}
+
+fun DocumentSnapshot.toFocusSession(): FocusSession {
+    return FocusSession(
+        sessionId = id,
+        treeId = getString("treeId").orEmpty(),
+        startTime = getLong("startTime") ?: 0L,
+        durationMinutes = getLong("durationMinutes")?.toInt() ?: 0,
+        status = getString("status") ?: "ALIVE",
+        isGroupSession = getBoolean("isGroupSession") ?: false,
+        roomId = getString("roomId")
+    )
 }

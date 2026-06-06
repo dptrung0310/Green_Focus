@@ -24,7 +24,10 @@ data class TeamRoom(
     val treeId: String = TreeType.DEFAULT.id,
     val focusLostAt: Timestamp? = null,
     val focusLostByUid: String? = null,
-    val focusLostEventId: String? = null
+    val focusLostEventId: String? = null,
+    val completedAt: Timestamp? = null,
+    val completedByUid: String? = null,
+    val completedEventId: String? = null
 )
 
 data class TeamMember(
@@ -35,7 +38,8 @@ data class TeamMember(
     val role: String = ROLE_MEMBER,
     val lastFocusLostAt: Timestamp? = null,
     val lastFocusLostEventId: String? = null,
-    val lastHandledFocusLostEventId: String? = null
+    val lastHandledFocusLostEventId: String? = null,
+    val lastHandledCompletedEventId: String? = null
 )
 
 data class TeamInvite(

@@ -232,7 +232,6 @@ export const onRoomFocusLost = functions.firestore
         .doc(focusLostEventId);
 
       batch.set(sessionRef, {
-        sessionId: focusLostEventId,
         treeId,
         startTime,
         durationMinutes,
@@ -247,6 +246,69 @@ export const onRoomFocusLost = functions.firestore
       "Saved failed group sessions for room:",
       roomId,
       focusLostEventId
+    );
+    return null;
+  });
+
+/** Save one deterministic alive session per member when a room completes. */
+export const onRoomCompleted = functions.firestore
+  .document("rooms/{roomId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    const roomId = context.params.roomId;
+    const completedEventId = after.completedEventId as string | undefined;
+
+    if (!completedEventId ||
+      completedEventId === before.completedEventId) {
+      return null;
+    }
+
+    const membersSnapshot = await db
+      .collection("rooms")
+      .doc(roomId)
+      .collection("members")
+      .get();
+
+    if (membersSnapshot.empty) {
+      console.log("No room members found for completed room:", roomId);
+      return null;
+    }
+
+    const durationMs = Number(after.durationMs) || 25 * 60 * 1000;
+    const durationMinutes = Math.max(1, Math.floor(durationMs / 60000));
+    const treeId = typeof after.treeId === "string" ?
+      after.treeId :
+      "default_oak";
+    const startTime = Date.now();
+    const batch = db.batch();
+
+    membersSnapshot.forEach((memberDoc) => {
+      const memberData = memberDoc.data();
+      const uid = typeof memberData.uid === "string" ?
+        memberData.uid :
+        memberDoc.id;
+      const sessionRef = db
+        .collection("sessions")
+        .doc(uid)
+        .collection("user_sessions")
+        .doc(completedEventId);
+
+      batch.set(sessionRef, {
+        treeId,
+        startTime,
+        durationMinutes,
+        status: "ALIVE",
+        isGroupSession: true,
+        roomId,
+      }, {merge: true});
+    });
+
+    await batch.commit();
+    console.log(
+      "Saved completed group sessions for room:",
+      roomId,
+      completedEventId
     );
     return null;
   });

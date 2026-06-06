@@ -36,7 +36,10 @@ class TeamRoomRepository(
             "treeId" to treeId,
             "focusLostAt" to null,
             "focusLostByUid" to null,
-            "focusLostEventId" to null
+            "focusLostEventId" to null,
+            "completedAt" to null,
+            "completedByUid" to null,
+            "completedEventId" to null
         )
         val memberData = mapOf(
             "uid" to host.uid,
@@ -46,7 +49,8 @@ class TeamRoomRepository(
             "role" to ROLE_HOST,
             "lastFocusLostAt" to null,
             "lastFocusLostEventId" to null,
-            "lastHandledFocusLostEventId" to null
+            "lastHandledFocusLostEventId" to null,
+            "lastHandledCompletedEventId" to null
         )
         val roomRef = roomDoc(roomId)
         val memberRef = membersCol(roomId).document(host.uid)
@@ -73,7 +77,8 @@ class TeamRoomRepository(
             "role" to ROLE_MEMBER,
             "lastFocusLostAt" to null,
             "lastFocusLostEventId" to null,
-            "lastHandledFocusLostEventId" to null
+            "lastHandledFocusLostEventId" to null,
+            "lastHandledCompletedEventId" to null
         )
         membersCol(roomId).document(user.uid).set(memberData).await()
     }
@@ -168,7 +173,10 @@ class TeamRoomRepository(
                 "durationMs" to durationMs,
                 "focusLostAt" to FieldValue.delete(),
                 "focusLostByUid" to FieldValue.delete(),
-                "focusLostEventId" to FieldValue.delete()
+                "focusLostEventId" to FieldValue.delete(),
+                "completedAt" to FieldValue.delete(),
+                "completedByUid" to FieldValue.delete(),
+                "completedEventId" to FieldValue.delete()
             )
         )
         membersSnapshot.documents.forEach { memberDoc ->
@@ -177,7 +185,8 @@ class TeamRoomRepository(
                 mapOf(
                     "lastFocusLostAt" to FieldValue.delete(),
                     "lastFocusLostEventId" to FieldValue.delete(),
-                    "lastHandledFocusLostEventId" to FieldValue.delete()
+                    "lastHandledFocusLostEventId" to FieldValue.delete(),
+                    "lastHandledCompletedEventId" to FieldValue.delete()
                 )
             )
         }
@@ -199,9 +208,35 @@ class TeamRoomRepository(
                 "startedAt" to FieldValue.delete(),
                 "focusLostAt" to FieldValue.delete(),
                 "focusLostByUid" to FieldValue.delete(),
-                "focusLostEventId" to FieldValue.delete()
+                "focusLostEventId" to FieldValue.delete(),
+                "completedAt" to FieldValue.delete(),
+                "completedByUid" to FieldValue.delete(),
+                "completedEventId" to FieldValue.delete()
             )
         ).await()
+    }
+
+    suspend fun markRoomCompleted(roomId: String, user: User): Result<Unit> = runCatching {
+        val roomRef = roomDoc(roomId)
+        val completedEventId = "${roomId}_${user.uid}_${UUID.randomUUID()}"
+        db.runTransaction { transaction ->
+            val roomSnapshot = transaction.get(roomRef)
+            val status = roomSnapshot.getString("status") ?: ROOM_STATUS_WAITING
+            if (status != ROOM_STATUS_STARTED) {
+                return@runTransaction
+            }
+
+            transaction.update(
+                roomRef,
+                mapOf(
+                    "status" to ROOM_STATUS_WAITING,
+                    "startedAt" to FieldValue.delete(),
+                    "completedAt" to FieldValue.serverTimestamp(),
+                    "completedByUid" to user.uid,
+                    "completedEventId" to completedEventId
+                )
+            )
+        }.await()
     }
 
     suspend fun resetRoomToWaiting(roomId: String): Result<Unit> = runCatching {
@@ -276,6 +311,16 @@ class TeamRoomRepository(
     ): Result<Unit> = runCatching {
         membersCol(roomId).document(userId)
             .update("lastHandledFocusLostEventId", focusLostEventId)
+            .await()
+    }
+
+    suspend fun markCompletedEventHandled(
+        roomId: String,
+        userId: String,
+        completedEventId: String
+    ): Result<Unit> = runCatching {
+        membersCol(roomId).document(userId)
+            .update("lastHandledCompletedEventId", completedEventId)
             .await()
     }
 

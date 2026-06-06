@@ -183,6 +183,16 @@ class HomeRoomViewModel(
         }
     }
 
+    fun completeRoom() {
+        val id = _uiState.value.activeRoomId ?: return
+        val user = currentUser ?: return
+        if (!_uiState.value.isHost) return
+        viewModelScope.launch {
+            teamRoomRepository.markRoomCompleted(id, user)
+                .onFailure { Log.e(TAG, "completeRoom failed", it) }
+        }
+    }
+
     /** Host-only: syncs the selected tree to all members. */
     fun updateRoomTree(treeId: String) {
         val id = _uiState.value.activeRoomId ?: return
@@ -231,6 +241,15 @@ class HomeRoomViewModel(
         viewModelScope.launch {
             teamRoomRepository.markFocusLostEventHandled(id, uid, focusLostEventId)
                 .onFailure { Log.e(TAG, "markFocusLostEventHandled failed", it) }
+        }
+    }
+
+    fun markCompletedEventHandled(completedEventId: String) {
+        val id = _uiState.value.activeRoomId ?: return
+        val uid = currentUser?.uid ?: FirebaseModule.auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            teamRoomRepository.markCompletedEventHandled(id, uid, completedEventId)
+                .onFailure { Log.e(TAG, "markCompletedEventHandled failed", it) }
         }
     }
 

@@ -37,7 +37,7 @@ fun AuthTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = { Text(placeholder, color = Color.Gray) },
-        leadingIcon = { Icon(imageVector = icon, contentDescription = null, tint = Color.Gray) },
+        leadingIcon = { Icon(imageVector = icon, contentDescription = null, tint = AuthGreenDark) },
         visualTransformation = visualTransformation,
         keyboardOptions = keyboardOptions,
         singleLine = true,
@@ -46,11 +46,18 @@ fun AuthTextField(
             .background(Color.White, RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AuthGreenLight,
+            // Màu chữ người dùng nhập — luôn tối để dễ đọc trên nền trắng
+            focusedTextColor    = Color(0xFF1C1B1F),
+            unfocusedTextColor  = Color(0xFF1C1B1F),
+            disabledTextColor   = Color(0xFF1C1B1F).copy(alpha = 0.5f),
+            // Viền
+            focusedBorderColor  = AuthGreenLight,
             unfocusedBorderColor = Color.Transparent,
-            focusedContainerColor = Color.White,
+            // Nền container
+            focusedContainerColor   = Color.White,
             unfocusedContainerColor = Color.White,
-            cursorColor = AuthGreenLight
+            // Con trỏ và icon
+            cursorColor = AuthGreenLight,
         )
     )
 }
@@ -150,7 +157,7 @@ fun AuthTreeLogo(modifier: Modifier = Modifier) {
             // <circle cx="27" cy="20" r="4" fill="currentColor" opacity="0.8"/>
             drawCircle(color = Color.White.copy(alpha = 0.8f), radius = 4f * scaleX, center = Offset(27f * scaleX, 20f * scaleY))
             // <circle cx="20" cy="28" r="5" fill="currentColor" opacity="0.9"/>
-            drawCircle(color = Color.White.copy(alpha = 0.9f), radius = 5f * scaleX, center = Offset(20f * scaleX, 28f * scaleY))
+            drawCircle(color = Color.White, radius = 5f * scaleX, center = Offset(20f * scaleX, 28f * scaleY))
             // <rect x="19" y="32" width="2" height="8" fill="currentColor"/>
             drawRect(
                 color = Color.White,

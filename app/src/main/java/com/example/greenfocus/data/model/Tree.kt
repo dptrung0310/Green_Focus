@@ -50,7 +50,6 @@ data class TreeType(
 private val nameKeyToStringRes = mapOf(
     "tree_oak"    to R.string.tree_oak,
     "tree_pine"   to R.string.tree_pine,
-    "tree_cherry" to R.string.tree_cherry,
     "tree_maple"  to R.string.tree_maple,
     "tree_palm"   to R.string.tree_palm,
     "tree_cactus" to R.string.tree_cactus,
@@ -82,7 +81,6 @@ object TreeResourceMapper {
         return when (treeId) {
             "default_oak" -> R.drawable.oak_small
             "pine"        -> R.drawable.pine_small
-            "cherry"      -> R.drawable.cherry_small
             "maple"       -> R.drawable.maple_small
             "palm"        -> R.drawable.palm_small
             "cactus"      -> R.drawable.cactus_small
@@ -96,7 +94,6 @@ object TreeResourceMapper {
         return when (treeId) {
             "default_oak" -> R.drawable.oak_big
             "pine"        -> R.drawable.pine_big
-            "cherry"      -> R.drawable.cherry_big
             "maple"       -> R.drawable.maple_big
             "palm"        -> R.drawable.palm_big
             "cactus"      -> R.drawable.cactus_big
@@ -113,7 +110,6 @@ object TreeResourceMapper {
         return when (treeId) {
             "default_oak" -> R.string.tree_oak
             "pine"        -> R.string.tree_pine
-            "cherry"      -> R.string.tree_cherry
             "maple"       -> R.string.tree_maple
             "palm"        -> R.string.tree_palm
             "cactus"      -> R.string.tree_cactus

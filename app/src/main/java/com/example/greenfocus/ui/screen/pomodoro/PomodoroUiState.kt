@@ -9,6 +9,7 @@ data class PomodoroUiState (
     val currentUserName: String = "Placeholder",
     val isTimerRunning: Boolean = false,
     val isTimerFinished: Boolean = false,
+    val isTimerFailed: Boolean = false,
     val isHalfDone: Boolean = false,
     val formattedTime: String = "25:00",
     val dialogTimeValue: Int = 25,
@@ -21,5 +22,7 @@ data class PomodoroUiState (
     val showTimeDialog: Boolean = false,
     val showRationaleDialog: Boolean = false,
     val showUsageStatsRationaleDialog: Boolean = false,
-    val isDeepFocusEnabled: Boolean = false
+    val isDeepFocusEnabled: Boolean = false,
+    val todayFocusMinutes: Int = 0,
+    val todayTreesPlanted: Int = 0
 )

@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -175,7 +177,6 @@ fun SettingsScreen(
 
 // --- HELPER COMPOSABLES ---
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SoundDropdownMenu(
     currentSound: Int,
@@ -189,31 +190,41 @@ fun SoundDropdownMenu(
     val currentSoundName = soundOptions.first { it.id == currentSound }.name
 
     Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = currentSoundName,
-                onValueChange = {},
-                readOnly = true,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.menuAnchor(type = MenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                soundOptions.forEach { (id, name) ->
-                    DropdownMenuItem(
-                        text = { Text(name) },
-                        onClick = {
-                            onSoundSelected(id)
-                            expanded = false
-                        }
+        OutlinedTextField(
+            value = currentSoundName,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = {
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+                        contentDescription = null
                     )
                 }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Overlay transparent Box to capture clicks
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clickable { expanded = !expanded }
+        )
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            soundOptions.forEach { (id, name) ->
+                DropdownMenuItem(
+                    text = { Text(name) },
+                    onClick = {
+                        onSoundSelected(id)
+                        expanded = false
+                    }
+                )
             }
         }
     }

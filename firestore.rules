@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Checks if the request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper: Checks if the user is operating on their own record
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      // FCM Token subcollection security rules
+      match /fcmTokens/{token} {
+        // Users can register or delete their own FCM tokens (write contains create/update/delete)
+        allow write, delete: if isOwner(userId);
+        
+        // Private by default - Client SDKs cannot read list of tokens of other users.
+        // Prevents leaks. Only Cloud Functions and Admin SDK can read them.
+        allow read: if false; 
+      }
+    }
+
+    // Friend Requests Rules
+    match /friend_requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Team Rooms Rules
+    match /rooms/{roomId} {
+      allow read, write: if isAuthenticated();
+
+      match /invites/{inviteId} {
+        allow read, write: if isAuthenticated();
+      }
+
+      match /members/{memberId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+  }
+}

@@ -74,7 +74,7 @@ fun ProfileScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Profile", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text("Cá nhân", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     IconButton(
                         onClick = { onSettingNavigate() },
                         modifier = Modifier
@@ -125,7 +125,7 @@ fun ProfileScreen(
                                 ) {
                                     Icon(Icons.Default.Star, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Level ${user.level}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                                    Text("Cấp độ ${user.level}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -167,12 +167,12 @@ fun ProfileScreen(
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = "🏆", iconColor = Color(0xFFFFD54F), iconBg = Color(0xFFFFD54F).copy(alpha = 0.2f),
-                    value = user.coins.toString(), label = "Coins Earned"
+                    value = user.coins.toString(), label = "Xu hiện có"
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = "🎯", iconColor = AuthGreenLight, iconBg = AuthGreenLight.copy(alpha = 0.2f),
-                    value = user.totalTreesPlanted.toString(), label = "Trees Planted"
+                    value = user.totalTreesPlanted.toString(), label = "Cây đã trồng"
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -181,12 +181,12 @@ fun ProfileScreen(
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = "⚡", iconColor = AuthGreenDark, iconBg = AuthGreenDark.copy(alpha = 0.2f),
-                    value = "${hours}h", label = "Total Time"
+                    value = "${hours}h", label = "Tổng thời gian"
                 )
                 StatCard(
                     modifier = Modifier.weight(1f),
                     icon = "🔓", iconColor = Color(0xFF42A5F5), iconBg = Color(0xFF42A5F5).copy(alpha = 0.2f),
-                    value = user.unlockedTreeIds.size.toString(), label = "Trees Unlocked"
+                    value = user.unlockedTreeIds.size.toString(), label = "Cây đã mở khóa"
                 )
             }
         }
@@ -204,18 +204,6 @@ fun ProfileScreen(
             ) {
                 Column {
                     TextButton(
-                        onClick = { onSettingNavigate() },
-                        modifier = Modifier.fillMaxWidth().padding(8.dp),
-                        contentPadding = PaddingValues(16.dp)
-                    ) {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Settings, contentDescription = null, tint = Color.Gray)
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text("Settings", color = Color.DarkGray, fontSize = 16.sp)
-                        }
-                    }
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f), thickness = 1.dp)
-                    TextButton(
                         onClick = onLogout,
                         modifier = Modifier.fillMaxWidth().padding(8.dp),
                         contentPadding = PaddingValues(16.dp)
@@ -223,7 +211,7 @@ fun ProfileScreen(
                         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = Color.Red)
                             Spacer(modifier = Modifier.width(16.dp))
-                            Text("Log Out", color = Color.Red, fontSize = 16.sp)
+                            Text("Đăng xuất", color = Color.Red, fontSize = 16.sp)
                         }
                     }
                 }

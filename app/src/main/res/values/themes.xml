@@ -2,4 +2,7 @@
 <resources>
 
     <style name="Theme.GreenFocus" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.GreenFocus.Starting" parent="Theme.GreenFocus">
+        <item name="android:windowBackground">@color/greenfocus_splash_background</item>
+    </style>
 </resources>

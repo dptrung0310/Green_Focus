@@ -163,9 +163,22 @@ fun StoreScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
-                        Text(stringResource(R.string.store_title), fontSize = 28.sp, fontWeight = FontWeight.Bold, color = BannerGreen)
-                        Text(stringResource(R.string.store_subtitle), fontSize = 16.sp, color = TextMuted)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.store_title),
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BannerGreen,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = stringResource(R.string.store_subtitle),
+                            fontSize = 16.sp,
+                            color = TextMuted,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                     }
 
                     //User total coins will be updated here

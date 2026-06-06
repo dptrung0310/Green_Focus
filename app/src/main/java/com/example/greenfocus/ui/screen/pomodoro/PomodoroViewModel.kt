@@ -14,6 +14,8 @@ import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.repository.UserRepository
 import com.example.greenfocus.data.repository.ForestRepository
+import com.example.greenfocus.data.repository.DataRepository
+import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.util.SessionState
 import com.example.greenfocus.util.TimerForegroundService
 import com.example.greenfocus.util.TimerManager
@@ -22,11 +24,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class PomodoroViewModel(
     private val timerManager: TimerManager,
     private val userRepository: UserRepository,
-    private val forestRepository: ForestRepository
+    private val forestRepository: ForestRepository,
+    private val dataRepository: DataRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PomodoroUiState())
     var pomodoroUiState : StateFlow<PomodoroUiState> = _uiState.asStateFlow()
@@ -36,6 +40,18 @@ class PomodoroViewModel(
         // As soon as the ViewModel is created, start listening to the TimerManager
         observeTimer()
         observeUserState()
+        syncUserStats()
+        observeTodayStats()
+    }
+
+    private fun syncUserStats() {
+        viewModelScope.launch {
+            try {
+                userRepository.syncUserStatsWithSessions()
+            } catch (e: Exception) {
+                android.util.Log.e("PomodoroViewModel", "Error syncing focus stats", e)
+            }
+        }
     }
 
     private fun observeTimer() {
@@ -58,16 +74,20 @@ class PomodoroViewModel(
                     SessionState.INIT -> {
                         _uiState.update { it.copy(
                             selectedTreeImage = it.selectedTree.imageStaticSeed,
-                            isHalfDone = false  // reset animation for new session
+                            isHalfDone = false,  // reset animation for new session
+                            isTimerFinished = false,
+                            isTimerFailed = false
                         )}
                     }
                     SessionState.HALF_DONE -> {
-                        _uiState.update { it.copy(isHalfDone = true) }
+                        _uiState.update { it.copy(isHalfDone = true, isTimerFinished = false, isTimerFailed = false) }
                     }
                     SessionState.SUCCESS -> {
+                        _uiState.update { it.copy(isTimerFinished = true, isTimerFailed = false) }
                         onTimerFinishedSuccessfully()
                     }
                     SessionState.FAILED -> {
+                        _uiState.update { it.copy(isTimerFinished = false, isTimerFailed = true) }
                         onTimerFailed()
                     }
                     else -> {
@@ -141,8 +161,28 @@ class PomodoroViewModel(
         timerManager.toggleDeepMode()
     }
 
+    fun setTimerMinutes(minutes: Int) {
+        if (_uiState.value.isTimerRunning) return
+        val safeMinutes = minutes.coerceAtLeast(1)
+        _uiState.update { it.copy(dialogTimeValue = safeMinutes) }
+        timerManager.setTimer(safeMinutes)
+    }
+
+    fun resetToDefault() {
+        updateSelectedTree(TreeType.DEFAULT)
+        setTimerMinutes(25)
+    }
+    fun setTimerSeconds(seconds: Int) {
+        timerManager.setTimerSeconds(seconds)
+    }
+
     fun setTimer() {
          timerManager.setTimer(_uiState.value.dialogTimeValue)
+    }
+
+    fun resetAfterSession(minutes: Int) {
+        val safeMinutes = minutes.coerceAtLeast(1)
+        timerManager.setTimer(safeMinutes)
     }
 
     fun startTimerService(context: Context) {
@@ -182,6 +222,30 @@ class PomodoroViewModel(
         return String.format("%02d:%02d", minutes, remainingSeconds)
     }
 
+    private fun isToday(timestamp: Long): Boolean {
+        val target = Calendar.getInstance().apply { timeInMillis = timestamp }
+        val today = Calendar.getInstance()
+        return target.get(Calendar.YEAR) == today.get(Calendar.YEAR) &&
+               target.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)
+    }
+
+    private fun observeTodayStats() {
+        viewModelScope.launch {
+            dataRepository.getSessions().collect { sessions ->
+                val todaySessions = sessions.filter { isToday(it.startTime) }
+                val todaySuccessSessions = todaySessions.filter { it.status == "ALIVE" }
+                val minutes = todaySuccessSessions.sumOf { it.durationMinutes }
+                val trees = todaySuccessSessions.size
+                _uiState.update { currentState ->
+                    currentState.copy(
+                        todayFocusMinutes = minutes,
+                        todayTreesPlanted = trees
+                    )
+                }
+            }
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -189,10 +253,12 @@ class PomodoroViewModel(
                 val timerManager = application.container.timerManager
                 val userRepository = application.container.userRepository
                 val forestRepository = application.container.forestRepository
+                val dataRepository = application.container.dataRepository
                 PomodoroViewModel(
                     timerManager = timerManager,
                     userRepository = userRepository,
-                    forestRepository = forestRepository
+                    forestRepository = forestRepository,
+                    dataRepository = dataRepository
                 )
             }
         }

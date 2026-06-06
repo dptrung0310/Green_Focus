@@ -12,7 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.greenfocus.ui.theme.AuthGreenLight
 import com.example.greenfocus.R
 
 data class NavItem(val route: String, val label: String, val iconRes: Int)
@@ -31,7 +30,7 @@ fun BottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
+            .background(Color(0xFF2E7D32))   // xanh lá đậm — đồng bộ với brand
             .navigationBarsPadding()
             .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -39,7 +38,7 @@ fun BottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
     ) {
         navItems.forEach { item ->
             val isSelected = item.route == currentRoute
-            val contentColor = if (isSelected) AuthGreenLight else Color.Gray
+            val contentColor = if (isSelected) Color.White else Color.White.copy(alpha = 0.55f)
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,

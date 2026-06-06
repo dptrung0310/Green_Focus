@@ -408,12 +408,13 @@ fun TeamRoomScreen(
                     Text(
                         text = stringResource(R.string.pomodoro_start_button),
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             } else if (isWaiting) {
                 Text(
-                    text = "Waiting for host start...",
+                    text = "Chờ chủ phòng bắt đầu...",
                     fontSize = 14.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -430,7 +431,8 @@ fun TeamRoomScreen(
                 Text(
                     text = stringResource(R.string.pomodoro_stop_button),
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD32F2F)
                 )
             }
         }
@@ -501,7 +503,9 @@ private fun TeamMembersRow(members: List<TeamMember>) {
                 Text(
                     text = member.displayName,
                     fontSize = 12.sp,
-                    maxLines = 1
+                    maxLines = 1,
+                    color = Color(0xFF2E7D32),
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
@@ -517,14 +521,14 @@ private fun InviteFriendDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Invite Friend", fontWeight = FontWeight.Bold) },
+        title = { Text("Mời bạn bè", fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32)) },
         text = {
             if (friends.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No friends to invite", color = Color.Gray)
+                    Text("Không có bạn bè để mời", color = Color.Gray)
                 }
             } else {
                 LazyRow(
@@ -536,7 +540,7 @@ private fun InviteFriendDialog(
                         val isInvited = invitedIds.contains(friend.uid)
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.width(92.dp)
+                            modifier = Modifier.width(88.dp)
                         ) {
                             AsyncImage(
                                 model = friend.avatarUrl.ifBlank { "https://ui-avatars.com/api/?name=${friend.displayName}" },
@@ -550,15 +554,28 @@ private fun InviteFriendDialog(
                             Text(
                                 text = friend.displayName,
                                 fontSize = 12.sp,
-                                maxLines = 1
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                color = Color(0xFF2C3E50),
+                                fontWeight = FontWeight.Medium
                             )
                             Spacer(modifier = Modifier.height(6.dp))
                             Button(
                                 onClick = { onInvite(friend) },
                                 enabled = !isInvited,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(32.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                             ) {
-                                Text(if (isInvited) "Đã mời" else "Mời")
+                                Text(
+                                    text = if (isInvited) "Đã mời" else "Mời",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    maxLines = 1
+                                )
                             }
                         }
                     }
@@ -567,7 +584,7 @@ private fun InviteFriendDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = Color(0xFF2E7D32))
+                Text("Đóng", color = Color(0xFF2E7D32))
             }
         }
     )

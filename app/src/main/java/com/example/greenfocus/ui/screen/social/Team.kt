@@ -27,7 +27,7 @@ fun TeamActionButton(title: String, subtitle: String, onClick: () -> Unit) {
         contentPadding = PaddingValues(16.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
             if (subtitle.isNotEmpty()) {
                 Text(text = subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
             }

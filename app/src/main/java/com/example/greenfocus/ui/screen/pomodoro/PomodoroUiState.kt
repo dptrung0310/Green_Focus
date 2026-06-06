@@ -9,6 +9,8 @@ data class PomodoroUiState (
     val currentUserName: String = "Placeholder",
     val isTimerRunning: Boolean = false,
     val isTimerFinished: Boolean = false,
+    val isTimerFailed: Boolean = false,
+    val isHalfDone: Boolean = false,
     val formattedTime: String = "25:00",
     val dialogTimeValue: Int = 25,
     val currentPercentage: Float = 0.0f,

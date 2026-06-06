@@ -48,6 +48,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")  // Database chính
     implementation("com.google.firebase:firebase-database")   // Realtime cho Group
     implementation("com.google.firebase:firebase-storage")    // Lưu ảnh/3D
+    implementation("com.google.firebase:firebase-messaging")  // FCM Push Notification
     implementation("androidx.navigation:navigation-compose:2.8.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.2")
     implementation(libs.androidx.core.ktx)
@@ -59,6 +60,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.camera.core)
+    implementation("androidx.compose.material:material-icons-extended") // Thêm để dùng PersonAdd, ContentCopy
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
     //Chart
@@ -69,6 +71,8 @@ dependencies {
     implementation(libs.androidx.lifecycle.service) // WorkManager
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0") // Kotlin Serialization for JSON
     implementation("io.coil-kt:coil-compose:2.4.0") // Coil
+    implementation("com.google.ar:core:1.42.0") // ARCore
+    implementation("io.github.sceneview:arsceneview:4.16.10") // Sceneview AR
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

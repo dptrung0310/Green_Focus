@@ -37,7 +37,8 @@ class ForestViewModel(
                         currentAliveTree = aliveCount,
                         currentDeadTree = deadCount,
                         currentTotalTree = totalCount,
-                        treeList = sessions) }
+                        treeList = sessions,
+                        isLoaded = true) }
             }
         }
     }

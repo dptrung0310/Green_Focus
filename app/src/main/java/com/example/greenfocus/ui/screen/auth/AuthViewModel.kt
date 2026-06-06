@@ -16,34 +16,30 @@ class AuthViewModel(private val repository: AuthRepository) : ViewModel() {
     var errorMessage by mutableStateOf<String?>(null)
 
     fun register(email: String, pass: String, name: String, onSuccess: () -> Unit) {
-        if (email.isEmpty() || pass.isEmpty() || name.isEmpty()) {
-            errorMessage = "Vui lòng nhập đầy đủ thông tin"
+        if (email.isBlank() || pass.isBlank() || name.isBlank()) {
+            errorMessage = "Vui long nhap day du thong tin"
             return
         }
 
         isLoading = true
         errorMessage = null
-        repository.signUp(email, pass, name) { success, error ->
+        repository.signUp(email.trim(), pass, name.trim()) { success, error ->
             isLoading = false
             if (success) onSuccess() else errorMessage = error
         }
     }
 
     fun login(email: String, pass: String, onSuccess: () -> Unit) {
-        if (email.isEmpty() || pass.isEmpty()) {
-            errorMessage = "Vui lòng nhập đầy đủ thông tin"
+        if (email.isBlank() || pass.isBlank()) {
+            errorMessage = "Vui long nhap day du thong tin"
             return
         }
 
         isLoading = true
         errorMessage = null
-        repository.login(email, pass) { success, error ->
+        repository.login(email.trim(), pass) { success, error ->
             isLoading = false
-            if (success) {
-                onSuccess()
-            } else {
-                errorMessage = error
-            }
+            if (success) onSuccess() else errorMessage = error
         }
     }
 

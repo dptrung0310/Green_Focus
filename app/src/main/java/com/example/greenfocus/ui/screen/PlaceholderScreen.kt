@@ -1,5 +1,6 @@
 package com.example.greenfocus.ui.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -16,6 +17,7 @@ fun PlaceholderScreen(title: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFFAF7EC))
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

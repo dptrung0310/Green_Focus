@@ -33,7 +33,7 @@ fun BottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
             .fillMaxWidth()
             .background(Color.White)
             .navigationBarsPadding()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -45,19 +45,19 @@ fun BottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
                     .clickable { onNavigate(item.route) }
-                    .padding(horizontal = 4.dp, vertical = 4.dp)
+                    .padding(horizontal = 6.dp, vertical = 6.dp)
             ) {
                 Icon(
                     painter = painterResource(id = item.iconRes),
                     contentDescription = item.label,
                     tint = contentColor,
-                    modifier = Modifier.size(if (isSelected) 26.dp else 22.dp)
+                    modifier = Modifier.size(if (isSelected) 28.dp else 24.dp)
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = item.label,
                     color = contentColor,
-                    fontSize = 9.sp
+                    fontSize = 11.sp
                 )
             }
         }

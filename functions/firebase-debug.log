@@ -1,0 +1,29 @@
+[debug] [2026-05-29T03:36:14.929Z] ----------------------------------------------------------------------
+[debug] [2026-05-29T03:36:14.932Z] Command:       D:\NodeJS\node.exe C:\Users\ADMIN\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2026-05-29T03:36:14.932Z] CLI Version:   15.19.0
+[debug] [2026-05-29T03:36:14.933Z] Platform:      win32
+[debug] [2026-05-29T03:36:14.933Z] Node Version:  v22.13.1
+[debug] [2026-05-29T03:36:14.933Z] Time:          Fri May 29 2026 10:36:14 GMT+0700 (Giờ Đông Dương)
+[debug] [2026-05-29T03:36:14.933Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-29T03:36:17.252Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-29T03:36:17.252Z] > authorizing via signed-in user (nguyenbinh39205@gmail.com)
+[debug] [2026-05-29T03:36:17.252Z] [iam] checking project greenfocus-2aebd for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-05-29T03:36:17.254Z] Checked if tokens are valid: true, expires at: 1780027045797
+[debug] [2026-05-29T03:36:17.254Z] Checked if tokens are valid: true, expires at: 1780027045797
+[debug] [2026-05-29T03:36:17.255Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/greenfocus-2aebd:testIamPermissions [none]
+[debug] [2026-05-29T03:36:17.255Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/greenfocus-2aebd:testIamPermissions  x-goog-user-project=greenfocus-2aebd
+[debug] [2026-05-29T03:36:17.255Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/greenfocus-2aebd:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-05-29T03:36:18.338Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/greenfocus-2aebd:testIamPermissions 200
+[debug] [2026-05-29T03:36:18.338Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/greenfocus-2aebd:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-05-29T03:36:18.338Z] Checked if tokens are valid: true, expires at: 1780027045797
+[debug] [2026-05-29T03:36:18.338Z] Checked if tokens are valid: true, expires at: 1780027045797
+[debug] [2026-05-29T03:36:18.339Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/greenfocus-2aebd/serviceAccounts/greenfocus-2aebd@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-05-29T03:36:18.339Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/greenfocus-2aebd/serviceAccounts/greenfocus-2aebd@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-05-29T03:36:19.625Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/greenfocus-2aebd/serviceAccounts/greenfocus-2aebd@appspot.gserviceaccount.com:testIamPermissions 200
+[debug] [2026-05-29T03:36:19.625Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/greenfocus-2aebd/serviceAccounts/greenfocus-2aebd@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[info] 
+[info] === Deploying to 'greenfocus-2aebd'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix "$RESOURCE_DIR" run lint

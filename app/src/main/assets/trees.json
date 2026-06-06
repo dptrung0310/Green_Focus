@@ -2,13 +2,13 @@
   {
     "id": "default_oak",
     "nameKey": "tree_oak",
-    "price": 300,
+    "price": 1,
     "description": "Classic and sturdy",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_oak",
-    "imageStaticSmall": "tree_oak",
-    "imageStaticBig": "tree_oak"
+    "imageStaticSeed": "default_oak",
+    "imageStaticSmall": "default_oak",
+    "imageStaticBig": "default_oak"
   },
   {
     "id": "pine",
@@ -17,74 +17,63 @@
     "description": "Evergreen focus",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_pine",
-    "imageStaticSmall": "tree_pine",
-    "imageStaticBig": "tree_pine"
-  },
-  {
-    "id": "cherry",
-    "nameKey": "tree_cherry",
-    "price": 500,
-    "description": "Beautiful and calm",
-    "growthTimeMinutes": 25,
-    "lottieAnimation": "",
-    "imageStaticSeed": "tree_cherry",
-    "imageStaticSmall": "tree_cherry",
-    "imageStaticBig": "tree_cherry"
+    "imageStaticSeed": "pine",
+    "imageStaticSmall": "pine",
+    "imageStaticBig": "pine"
   },
   {
     "id": "maple",
     "nameKey": "tree_maple",
-    "price": 500,
+    "price": 1,
     "description": "Autumn vibes",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_maple",
-    "imageStaticSmall": "tree_maple",
-    "imageStaticBig": "tree_maple"
+    "imageStaticSeed": "maple",
+    "imageStaticSmall": "maple",
+    "imageStaticBig": "maple"
   },
   {
     "id": "palm",
     "nameKey": "tree_palm",
-    "price": 750,
+    "price": 1,
     "description": "Tropical paradise",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_palm",
-    "imageStaticSmall": "tree_palm",
-    "imageStaticBig": "tree_palm"
+    "imageStaticSeed": "palm",
+    "imageStaticSmall": "palm",
+    "imageStaticBig": "palm"
   },
   {
     "id": "cactus",
     "nameKey": "tree_cactus",
-    "price": 1000,
+    "price": 1,
     "description": "Desert warrior",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_cactus",
-    "imageStaticSmall": "tree_cactus",
-    "imageStaticBig": "tree_cactus"
+    "imageStaticSeed": "cactus",
+    "imageStaticSmall": "cactus",
+    "imageStaticBig": "cactus"
   },
   {
     "id": "bamboo",
     "nameKey": "tree_bamboo",
-    "price": 1250,
+    "price": 1,
     "description": "Zen master",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_bamboo",
-    "imageStaticSmall": "tree_bamboo",
-    "imageStaticBig": "tree_bamboo"
+    "imageStaticSeed": "bamboo",
+    "imageStaticSmall": "bamboo",
+    "imageStaticBig": "bamboo"
   },
   {
     "id": "sakura",
     "nameKey": "tree_sakura",
-    "price": 2000,
+    "price": 1,
     "description": "Legendary beauty",
     "growthTimeMinutes": 25,
     "lottieAnimation": "",
-    "imageStaticSeed": "tree_sakura",
-    "imageStaticSmall": "tree_sakura",
-    "imageStaticBig": "tree_sakura"
+    "imageStaticSeed": "sakura",
+    "imageStaticSmall": "sakura",
+    "imageStaticBig": "sakura"
   }
 ]

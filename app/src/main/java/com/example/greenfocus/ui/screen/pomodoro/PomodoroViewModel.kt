@@ -58,16 +58,20 @@ class PomodoroViewModel(
                     SessionState.INIT -> {
                         _uiState.update { it.copy(
                             selectedTreeImage = it.selectedTree.imageStaticSeed,
-                            isHalfDone = false  // reset animation for new session
+                            isHalfDone = false,  // reset animation for new session
+                            isTimerFinished = false,
+                            isTimerFailed = false
                         )}
                     }
                     SessionState.HALF_DONE -> {
-                        _uiState.update { it.copy(isHalfDone = true) }
+                        _uiState.update { it.copy(isHalfDone = true, isTimerFinished = false, isTimerFailed = false) }
                     }
                     SessionState.SUCCESS -> {
+                        _uiState.update { it.copy(isTimerFinished = true, isTimerFailed = false) }
                         onTimerFinishedSuccessfully()
                     }
                     SessionState.FAILED -> {
+                        _uiState.update { it.copy(isTimerFinished = false, isTimerFailed = true) }
                         onTimerFailed()
                     }
                     else -> {
@@ -150,6 +154,11 @@ class PomodoroViewModel(
 
     fun setTimer() {
          timerManager.setTimer(_uiState.value.dialogTimeValue)
+    }
+
+    fun resetAfterSession(minutes: Int) {
+        val safeMinutes = minutes.coerceAtLeast(1)
+        timerManager.setTimer(safeMinutes)
     }
 
     fun startTimerService(context: Context) {

@@ -14,7 +14,6 @@ import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.fcm.FcmTokenManager
 import com.example.greenfocus.ui.screen.auth.AuthViewModel
 import com.example.greenfocus.ui.screen.auth.LoginScreen
-import com.example.greenfocus.ui.screen.auth.OpeningScreen
 import com.example.greenfocus.ui.screen.auth.RegisterScreen
 import com.example.greenfocus.ui.screen.auth.SessionState
 import com.example.greenfocus.ui.screen.auth.SessionViewModel
@@ -38,13 +37,8 @@ fun SetupNavGraph(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = "opening"
+        startDestination = Screen.Login.route
     ) {
-        composable(route = "opening") {
-            // Splash stays until the session is validated; redirection is handled by SessionRedirect.
-            OpeningScreen(onFinished = {})
-        }
-
         composable(route = Screen.Login.route) {
             val authViewModel: AuthViewModel = viewModel(factory = AuthViewModel.Factory)
             LoginScreen(
@@ -120,7 +114,7 @@ private fun SessionRedirect(navController: NavHostController, sessionState: Sess
     androidx.compose.runtime.LaunchedEffect(sessionState) {
         val currentRoute = navController.currentDestination?.route
         when (sessionState) {
-            SessionState.Checking -> Unit // Stay on the splash/opening screen.
+            SessionState.Checking -> Unit // Stay on the current auth route while session resolves.
 
             SessionState.Authenticated -> {
                 if (currentRoute != Screen.Main.route) {

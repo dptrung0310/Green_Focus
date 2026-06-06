@@ -171,7 +171,7 @@ class HomeRoomViewModel(
 
     /**
      * Best-effort cleanup when the app is leaving the foreground or being closed.
-     * Host rooms are deleted; non-host members just leave the room.
+     * The room is deleted by the repository only when this user was the last member.
      */
     fun handleAppExit() {
         val roomId = _uiState.value.activeRoomId ?: return
@@ -179,7 +179,6 @@ class HomeRoomViewModel(
         exitCleanupHandled = true
 
         val uid = currentUser?.uid ?: FirebaseModule.auth.currentUser?.uid
-        val shouldDeleteRoom = _uiState.value.isHost
 
         observeJob?.cancel()
         observeJob = null
@@ -188,9 +187,7 @@ class HomeRoomViewModel(
 
         viewModelScope.launch {
             try {
-                val result = if (shouldDeleteRoom) {
-                    teamRoomRepository.deleteRoom(roomId)
-                } else if (uid != null) {
+                val result = if (uid != null) {
                     teamRoomRepository.leaveRoom(roomId, uid)
                 } else {
                     Result.success(Unit)

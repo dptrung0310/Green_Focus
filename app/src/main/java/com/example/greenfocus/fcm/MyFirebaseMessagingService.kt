@@ -9,6 +9,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.greenfocus.MainActivity
+import com.example.greenfocus.R
 import com.example.greenfocus.di.FirebaseModule
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
@@ -71,7 +72,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         
         // Build notification with custom options
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(android.R.drawable.ic_dialog_info) // Standard fallback icon
+            .setSmallIcon(R.drawable.ic_greenfocus_noti)
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)

@@ -271,7 +271,7 @@ private fun HomeRoomContent(
                 override fun onActivityPaused(activity: android.app.Activity) = Unit
                 override fun onActivityStopped(activity: android.app.Activity) {
                     startedCount = (startedCount - 1).coerceAtLeast(0)
-                    if (startedCount == 0) {
+                    if (startedCount == 0 && activity.isFinishing && !activity.isChangingConfigurations) {
                         homeRoomViewModel.handleAppExit()
                     }
                 }
@@ -366,6 +366,24 @@ private fun HomeRoomContent(
         }
     }
 
+    LaunchedEffect(pomodoroUiState.isTimerFinished, roomState.isHost, isStarted) {
+        if (pomodoroUiState.isTimerFinished) {
+            if (roomState.isHost && isStarted) {
+                homeRoomViewModel.stopRoom()
+            }
+            pomodoroViewModel.resetAfterSession(durationMinutes)
+        }
+    }
+
+    LaunchedEffect(pomodoroUiState.isTimerFailed, roomState.isHost, isStarted) {
+        if (pomodoroUiState.isTimerFailed) {
+            if (roomState.isHost && isStarted) {
+                homeRoomViewModel.stopRoom()
+            }
+            pomodoroViewModel.resetAfterSession(durationMinutes)
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -390,6 +408,39 @@ private fun HomeRoomContent(
                     contentDescription = "Back",
                     tint = Color(0xFF2E7D32)
                 )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Color(0xFFF1F8E9))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "ID Room: ${roomState.activeRoomId.orEmpty()}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF2E7D32)
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                IconButton(
+                    onClick = {
+                        roomState.activeRoomId?.let { id ->
+                            clipboardManager.setText(AnnotatedString(id))
+                        }
+                    },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy ID",
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
 
             IconButton(onClick = { showInviteDialog = true }) {
@@ -535,36 +586,6 @@ private fun HomeRoomContent(
                         }
                     )
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Text(
-                text = "ID Room: ${roomState.activeRoomId.orEmpty()}",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(
-                onClick = {
-                    roomState.activeRoomId?.let { id ->
-                        clipboardManager.setText(AnnotatedString(id))
-                    }
-                },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ContentCopy,
-                    contentDescription = "Copy ID",
-                    tint = Color.Gray,
-                    modifier = Modifier.size(16.dp)
-                )
             }
         }
 

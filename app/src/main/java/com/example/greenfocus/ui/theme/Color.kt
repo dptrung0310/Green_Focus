@@ -26,6 +26,9 @@ val BannerGreen_Start = Color(0xFF4bae4f)
 val BannerGreen_End = Color(0xFF2f7f33)
 val BottomNavBackGround = Color(0xFFFFFFFF)
 
+val StreakTextDark   = Color(0xFF3D2700)
+val StreakTextMedium = Color(0xFF5C3A00)
+
 // Colors for Auth screens
 val AuthBackground = Color(0xFFFAF7EC)
 val AuthGreenLight = Color(0xFF4CAF50)

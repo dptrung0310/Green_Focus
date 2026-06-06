@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.greenfocus"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -63,6 +63,10 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended") // Thêm để dùng PersonAdd, ContentCopy
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("androidx.work:work-runtime-ktx:2.8.1")
+    //Chart
+    implementation("com.patrykandpatrick.vico:compose:1.13.1")
+    implementation("com.patrykandpatrick.vico:compose-m3:1.13.1")
+    implementation("com.patrykandpatrick.vico:core:1.13.1")
     implementation("androidx.datastore:datastore-preferences:1.2.1")
     implementation(libs.androidx.lifecycle.service) // WorkManager
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0") // Kotlin Serialization for JSON

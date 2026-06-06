@@ -24,6 +24,7 @@ import com.example.greenfocus.ui.screen.profile.ProfileScreen
 import com.example.greenfocus.ui.screen.social.SocialScreen
 import com.example.greenfocus.ui.screen.store.StoreScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.greenfocus.ui.screen.stats.StatsScreen
 import androidx.compose.runtime.LaunchedEffect
 import com.example.greenfocus.fcm.FcmTokenManager
 import com.example.greenfocus.util.NotificationNavigationManager
@@ -101,7 +102,7 @@ fun MainScreen(
                 )
             }
             composable(Screen.Stats.route) {
-                PlaceholderScreen(title = "Stats")
+                StatsScreen()
             }
             composable(Screen.Store.route) {
                 val context = LocalContext.current

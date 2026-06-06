@@ -30,6 +30,7 @@ import com.example.greenfocus.fcm.FcmTokenManager
 import com.example.greenfocus.util.NotificationNavigationManager
 import com.example.greenfocus.ui.screen.store.StoreViewModel
 import com.example.greenfocus.util.Sound
+import com.example.greenfocus.ui.screen.pomodoro.room.ROOM_STATUS_STARTED
 
 @Composable
 fun MainScreen(
@@ -44,6 +45,7 @@ fun MainScreen(
     val soundManager = (LocalContext.current.applicationContext as GreenFocusApp).container.soundManager
     val timerManager = (LocalContext.current.applicationContext as GreenFocusApp).container.timerManager
     val homeRoomViewModel: HomeRoomViewModel = viewModel()
+    val homeRoomState by homeRoomViewModel.uiState.collectAsState()
     val timerState by timerManager.timerState.collectAsState()
     val isTimerRunning = timerState.isTimerRunning
 
@@ -64,6 +66,28 @@ fun MainScreen(
                     restoreState = true
                 }
                 NotificationNavigationManager.clearPendingRoute()
+            }
+        }
+    }
+
+    LaunchedEffect(
+        homeRoomState.activeRoomId,
+        homeRoomState.room?.status,
+        homeRoomState.room?.startedAt
+    ) {
+        val room = homeRoomState.room
+        if (
+            homeRoomState.activeRoomId != null &&
+            room?.status == ROOM_STATUS_STARTED &&
+            room.startedAt != null &&
+            currentRoute != Screen.Home.route
+        ) {
+            innerNavController.navigate(Screen.Home.route) {
+                popUpTo(innerNavController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+                launchSingleTop = true
+                restoreState = true
             }
         }
     }
@@ -112,18 +136,7 @@ fun MainScreen(
                 StoreScreen(viewModel = viewModel)
             }
             composable(Screen.Social.route) {
-                SocialScreen(
-                    homeRoomViewModel = homeRoomViewModel,
-                    onNavigateToHome = {
-                        innerNavController.navigate(Screen.Home.route) {
-                            popUpTo(innerNavController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
-                    }
-                )
+                SocialScreen()
             }
             composable(Screen.Profile.route) {
                 ProfileScreen(

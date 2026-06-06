@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.callbackFlow
 interface DataRepository {
 
     fun addSession(session: FocusSession)
+    fun setSession(sessionId: String, session: FocusSession)
     fun getSessions(): Flow<List<FocusSession>>
 }
 
@@ -32,6 +33,21 @@ class ProdDataRepository : DataRepository{
             }
             .addOnFailureListener { e ->
                 Log.e("ProdDataRepository", "Failed to save session", e)
+            }
+    }
+
+    override fun setSession(sessionId: String, session: FocusSession) {
+        val uid = currentUid
+        requireNotNull(uid) { "Cannot set session: User is not logged in." }
+
+        sessionDb.collection(FirestoreCollections.SESSIONS).document(uid).collection("user_sessions")
+            .document(sessionId)
+            .set(session.copy(sessionId = sessionId))
+            .addOnSuccessListener {
+                Log.d("ProdDataRepository", "Session saved with fixed ID: $sessionId")
+            }
+            .addOnFailureListener { e ->
+                Log.e("ProdDataRepository", "Failed to save fixed session: $sessionId", e)
             }
     }
 

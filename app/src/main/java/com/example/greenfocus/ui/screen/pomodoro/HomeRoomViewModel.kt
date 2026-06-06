@@ -7,25 +7,31 @@ import com.example.greenfocus.data.model.User
 import com.example.greenfocus.data.repository.ProdUserRepository
 import com.example.greenfocus.data.repository.UserRepository
 import com.example.greenfocus.di.FirebaseModule
-import com.example.greenfocus.ui.screen.social.DEFAULT_ROOM_DURATION_MS
-import com.example.greenfocus.ui.screen.social.ROOM_STATUS_STARTED
-import com.example.greenfocus.ui.screen.social.TeamInvite
-import com.example.greenfocus.ui.screen.social.TeamMember
-import com.example.greenfocus.ui.screen.social.TeamRoom
-import com.example.greenfocus.ui.screen.social.TeamRoomRepository
-import com.example.greenfocus.ui.screen.social.generateRoomId
+import com.example.greenfocus.ui.screen.pomodoro.room.DEFAULT_ROOM_DURATION_MS
+import com.example.greenfocus.ui.screen.pomodoro.room.ROOM_STATUS_STARTED
+import com.example.greenfocus.ui.screen.pomodoro.room.TeamInvite
+import com.example.greenfocus.ui.screen.pomodoro.room.TeamMember
+import com.example.greenfocus.ui.screen.pomodoro.room.TeamRoom
+import com.example.greenfocus.ui.screen.pomodoro.room.TeamRoomRepository
+import com.example.greenfocus.ui.screen.pomodoro.room.generateRoomId
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
  * Owns the team-room lifecycle for the Home (Pomodoro) tab.
  *
- * It reuses the Social [TeamRoomRepository] for room/member/invite sync, but deliberately
+ * It reuses [TeamRoomRepository] for room/member/invite sync, but deliberately
  * does NOT run the focus timer here: the local [PomodoroViewModel] + TimerManager keep
  * driving the countdown and Home's own deep-focus enforcement. This VM only syncs the
  * shared room config (tree, duration, status) and membership.
@@ -35,12 +41,15 @@ data class HomeRoomUiState(
     val room: TeamRoom? = null,
     val members: List<TeamMember> = emptyList(),
     val roomInvites: List<TeamInvite> = emptyList(),
+    val incomingRoomInvites: List<TeamInvite> = emptyList(),
+    val currentUserId: String? = null,
     val isHost: Boolean = false,
     val roomClosed: Boolean = false,
     val focusLostMessage: String? = null,
     val errorMessage: String? = null
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class HomeRoomViewModel(
     private val teamRoomRepository: TeamRoomRepository = TeamRoomRepository(),
     private val userRepository: UserRepository = ProdUserRepository()
@@ -54,11 +63,49 @@ class HomeRoomViewModel(
     private var hasSeenRoom = false
     private var exitCleanupHandled = false
     private var lastStatus: String? = null
-    private var lastFocusLostAtMsSeen: Long? = null
+    private var lastFocusLostEventIdSeen: String? = null
 
     init {
         viewModelScope.launch {
             userRepository.getCurrentUserProfileFlow().collect { currentUser = it }
+        }
+        observeIncomingRoomInvites()
+    }
+
+    private fun observeIncomingRoomInvites() {
+        viewModelScope.launch {
+            userRepository.getCurrentUserProfileFlow()
+                .map { it?.uid }
+                .distinctUntilChanged()
+                .flatMapLatest { uid ->
+                    if (uid == null) {
+                        flowOf(emptyList())
+                    } else {
+                        teamRoomRepository.observeInvites(uid)
+                            .catch { emit(emptyList()) }
+                    }
+                }
+                .catch { emit(emptyList()) }
+                .collect { invites ->
+                    _uiState.update { it.copy(incomingRoomInvites = invites) }
+                    cleanupInvalidInvites(invites)
+                }
+        }
+    }
+
+    private fun cleanupInvalidInvites(invites: List<TeamInvite>) {
+        viewModelScope.launch {
+            invites.forEach { invite ->
+                val uid = FirebaseModule.auth.currentUser?.uid ?: return@forEach
+                if (invite.roomId.isBlank()) {
+                    teamRoomRepository.deleteInviteForUser(uid, invite)
+                    return@forEach
+                }
+                val exists = teamRoomRepository.roomExists(invite.roomId)
+                if (!exists) {
+                    teamRoomRepository.deleteInviteForUser(uid, invite)
+                }
+            }
         }
     }
 
@@ -83,7 +130,7 @@ class HomeRoomViewModel(
         hasSeenRoom = false
         exitCleanupHandled = false
         lastStatus = null
-        lastFocusLostAtMsSeen = null
+        lastFocusLostEventIdSeen = null
         _uiState.update { HomeRoomUiState(activeRoomId = id) }
         observeJob?.cancel()
         observeJob = viewModelScope.launch {
@@ -103,6 +150,7 @@ class HomeRoomViewModel(
                         room = room,
                         members = members,
                         roomInvites = invites,
+                        currentUserId = uid,
                         isHost = !uid.isNullOrBlank() && room?.hostId == uid,
                         // Distinguish "still loading" (null before first load) from "deleted" (null after).
                         roomClosed = hasSeenRoom && room == null,
@@ -118,6 +166,7 @@ class HomeRoomViewModel(
     fun startRoom(durationMs: Long) {
         val id = _uiState.value.activeRoomId ?: return
         if (!_uiState.value.isHost) return
+        _uiState.update { it.copy(focusLostMessage = null) }
         viewModelScope.launch {
             teamRoomRepository.startRoom(id, durationMs)
                 .onFailure { Log.e(TAG, "startRoom failed", it) }
@@ -166,7 +215,30 @@ class HomeRoomViewModel(
     }
 
     fun clearFocusLostMessage() {
+        val id = _uiState.value.activeRoomId
         _uiState.update { it.copy(focusLostMessage = null) }
+        if (id != null) {
+            viewModelScope.launch {
+                teamRoomRepository.resetRoomToWaiting(id)
+                    .onFailure { Log.e(TAG, "clearFocusLostMessage failed", it) }
+            }
+        }
+    }
+
+    fun markFocusLostEventHandled(focusLostEventId: String) {
+        val id = _uiState.value.activeRoomId ?: return
+        val uid = currentUser?.uid ?: FirebaseModule.auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            teamRoomRepository.markFocusLostEventHandled(id, uid, focusLostEventId)
+                .onFailure { Log.e(TAG, "markFocusLostEventHandled failed", it) }
+        }
+    }
+
+    fun deleteInvite(invite: TeamInvite) {
+        viewModelScope.launch {
+            val uid = FirebaseModule.auth.currentUser?.uid ?: return@launch
+            teamRoomRepository.deleteInviteForUser(uid, invite)
+        }
     }
 
     private fun resolveFocusLostMessage(room: TeamRoom?, currentMember: TeamMember?): String? {
@@ -175,14 +247,16 @@ class HomeRoomViewModel(
         lastStatus = status
 
         val focusLostAtMs = room?.focusLostAt?.toDate()?.time
+        val focusLostEventKey = room?.focusLostEventId ?: focusLostAtMs?.toString()
         if (currentMember == null) return null
         val joinedAtMs = currentMember.joinedAt?.toDate()?.time
 
-        if (focusLostAtMs != null) {
+        if (focusLostAtMs != null && focusLostEventKey != null) {
             val joinedAfterEvent = joinedAtMs != null && joinedAtMs > focusLostAtMs
-            val isNewEvent = lastFocusLostAtMsSeen == null || focusLostAtMs > lastFocusLostAtMsSeen!!
-            if (isNewEvent && !joinedAfterEvent) {
-                lastFocusLostAtMsSeen = focusLostAtMs
+            val alreadyHandledEvent = currentMember.lastHandledFocusLostEventId == focusLostEventKey
+            val isNewEvent = lastFocusLostEventIdSeen != focusLostEventKey
+            if (isNewEvent && !joinedAfterEvent && !alreadyHandledEvent) {
+                lastFocusLostEventIdSeen = focusLostEventKey
                 return "Có người đã mất tập trung"
             }
         }

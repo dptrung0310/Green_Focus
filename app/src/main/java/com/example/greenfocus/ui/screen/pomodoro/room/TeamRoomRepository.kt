@@ -1,4 +1,4 @@
-package com.example.greenfocus.ui.screen.social
+package com.example.greenfocus.ui.screen.pomodoro.room
 
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.model.User
@@ -10,6 +10,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class TeamRoomRepository(
     private val db: FirebaseFirestore = FirebaseModule.firestore
@@ -33,7 +34,9 @@ class TeamRoomRepository(
             "startedAt" to null,
             "durationMs" to durationMs,
             "treeId" to treeId,
-            "focusLostAt" to null
+            "focusLostAt" to null,
+            "focusLostByUid" to null,
+            "focusLostEventId" to null
         )
         val memberData = mapOf(
             "uid" to host.uid,
@@ -41,7 +44,9 @@ class TeamRoomRepository(
             "avatarUrl" to host.avatarUrl,
             "joinedAt" to FieldValue.serverTimestamp(),
             "role" to ROLE_HOST,
-            "lastFocusLostAt" to null
+            "lastFocusLostAt" to null,
+            "lastFocusLostEventId" to null,
+            "lastHandledFocusLostEventId" to null
         )
         val roomRef = roomDoc(roomId)
         val memberRef = membersCol(roomId).document(host.uid)
@@ -66,7 +71,9 @@ class TeamRoomRepository(
             "avatarUrl" to user.avatarUrl,
             "joinedAt" to FieldValue.serverTimestamp(),
             "role" to ROLE_MEMBER,
-            "lastFocusLostAt" to null
+            "lastFocusLostAt" to null,
+            "lastFocusLostEventId" to null,
+            "lastHandledFocusLostEventId" to null
         )
         membersCol(roomId).document(user.uid).set(memberData).await()
     }
@@ -151,14 +158,30 @@ class TeamRoomRepository(
     }
 
     suspend fun startRoom(roomId: String, durationMs: Long): Result<Unit> = runCatching {
-        roomDoc(roomId).update(
+        val membersSnapshot = membersCol(roomId).get().await()
+        val batch = db.batch()
+        batch.update(
+            roomDoc(roomId),
             mapOf(
                 "status" to ROOM_STATUS_STARTED,
                 "startedAt" to FieldValue.serverTimestamp(),
                 "durationMs" to durationMs,
-                "focusLostAt" to FieldValue.delete()
+                "focusLostAt" to FieldValue.delete(),
+                "focusLostByUid" to FieldValue.delete(),
+                "focusLostEventId" to FieldValue.delete()
             )
-        ).await()
+        )
+        membersSnapshot.documents.forEach { memberDoc ->
+            batch.update(
+                memberDoc.reference,
+                mapOf(
+                    "lastFocusLostAt" to FieldValue.delete(),
+                    "lastFocusLostEventId" to FieldValue.delete(),
+                    "lastHandledFocusLostEventId" to FieldValue.delete()
+                )
+            )
+        }
+        batch.commit().await()
     }
 
     suspend fun updateRoomTree(roomId: String, treeId: String): Result<Unit> = runCatching {
@@ -173,35 +196,87 @@ class TeamRoomRepository(
         roomDoc(roomId).update(
             mapOf(
                 "status" to ROOM_STATUS_WAITING,
-                "startedAt" to FieldValue.delete()
+                "startedAt" to FieldValue.delete(),
+                "focusLostAt" to FieldValue.delete(),
+                "focusLostByUid" to FieldValue.delete(),
+                "focusLostEventId" to FieldValue.delete()
             )
         ).await()
     }
 
     suspend fun resetRoomToWaiting(roomId: String): Result<Unit> = runCatching {
-        roomDoc(roomId).update(
-            mapOf(
-                "status" to ROOM_STATUS_WAITING,
-                "startedAt" to FieldValue.delete(),
-                "focusLostAt" to FieldValue.serverTimestamp()
+        val roomSnapshot = roomDoc(roomId).get().await()
+        val membersSnapshot = membersCol(roomId).get().await()
+        val focusLostEventId = roomSnapshot.getString("focusLostEventId")
+        val allMembersHandledFocusLost = focusLostEventId.isNullOrBlank() ||
+            membersSnapshot.documents.all { memberDoc ->
+                memberDoc.getString("lastHandledFocusLostEventId") == focusLostEventId
+            }
+
+        val roomUpdate = mutableMapOf<String, Any>(
+            "status" to ROOM_STATUS_WAITING,
+            "startedAt" to FieldValue.delete()
+        )
+        if (allMembersHandledFocusLost) {
+            roomUpdate["focusLostAt"] = FieldValue.delete()
+            roomUpdate["focusLostByUid"] = FieldValue.delete()
+            roomUpdate["focusLostEventId"] = FieldValue.delete()
+        }
+
+        val batch = db.batch()
+        batch.update(roomDoc(roomId), roomUpdate)
+        membersSnapshot.documents.forEach { memberDoc ->
+            val memberUpdate = mutableMapOf<String, Any>(
+                "lastFocusLostAt" to FieldValue.delete(),
+                "lastFocusLostEventId" to FieldValue.delete()
             )
-        ).await()
+            if (allMembersHandledFocusLost) {
+                memberUpdate["lastHandledFocusLostEventId"] = FieldValue.delete()
+            }
+            batch.update(memberDoc.reference, memberUpdate)
+        }
+        batch.commit().await()
     }
 
     suspend fun markFocusLost(roomId: String, user: User): Result<Unit> = runCatching {
         val roomRef = roomDoc(roomId)
         val memberRef = membersCol(roomId).document(user.uid)
-        db.runBatch { batch ->
-            batch.update(memberRef, "lastFocusLostAt", FieldValue.serverTimestamp())
-            batch.update(
+        val focusLostEventId = "${roomId}_${user.uid}_${UUID.randomUUID()}"
+        db.runTransaction { transaction ->
+            val roomSnapshot = transaction.get(roomRef)
+            val status = roomSnapshot.getString("status") ?: ROOM_STATUS_WAITING
+            if (status != ROOM_STATUS_STARTED) {
+                return@runTransaction
+            }
+
+            transaction.update(
+                memberRef,
+                mapOf(
+                    "lastFocusLostAt" to FieldValue.serverTimestamp(),
+                    "lastFocusLostEventId" to focusLostEventId
+                )
+            )
+            transaction.update(
                 roomRef,
                 mapOf(
                     "status" to ROOM_STATUS_WAITING,
                     "startedAt" to FieldValue.delete(),
-                    "focusLostAt" to FieldValue.serverTimestamp()
+                    "focusLostAt" to FieldValue.serverTimestamp(),
+                    "focusLostByUid" to user.uid,
+                    "focusLostEventId" to focusLostEventId
                 )
             )
         }.await()
+    }
+
+    suspend fun markFocusLostEventHandled(
+        roomId: String,
+        userId: String,
+        focusLostEventId: String
+    ): Result<Unit> = runCatching {
+        membersCol(roomId).document(userId)
+            .update("lastHandledFocusLostEventId", focusLostEventId)
+            .await()
     }
 
     suspend fun sendInvite(roomId: String, friendUid: String, fromUser: User): Result<Unit> = runCatching {

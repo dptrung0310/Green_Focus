@@ -1,7 +1,8 @@
-package com.example.greenfocus.ui.screen.social
+package com.example.greenfocus.ui.screen.pomodoro.room
 
 import com.example.greenfocus.data.model.TreeType
 import com.google.firebase.Timestamp
+import kotlin.random.Random
 
 const val ROOM_STATUS_WAITING = "waiting"
 const val ROOM_STATUS_STARTED = "started"
@@ -21,7 +22,9 @@ data class TeamRoom(
     val startedAt: Timestamp? = null,
     val durationMs: Long = DEFAULT_ROOM_DURATION_MS,
     val treeId: String = TreeType.DEFAULT.id,
-    val focusLostAt: Timestamp? = null
+    val focusLostAt: Timestamp? = null,
+    val focusLostByUid: String? = null,
+    val focusLostEventId: String? = null
 )
 
 data class TeamMember(
@@ -30,7 +33,9 @@ data class TeamMember(
     val avatarUrl: String = "",
     val joinedAt: Timestamp? = null,
     val role: String = ROLE_MEMBER,
-    val lastFocusLostAt: Timestamp? = null
+    val lastFocusLostAt: Timestamp? = null,
+    val lastFocusLostEventId: String? = null,
+    val lastHandledFocusLostEventId: String? = null
 )
 
 data class TeamInvite(
@@ -41,3 +46,10 @@ data class TeamInvite(
     val toUid: String = "",
     val createdAt: Timestamp? = null
 )
+
+fun generateRoomId(): String {
+    val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    return (1..6)
+        .map { chars[Random.nextInt(chars.length)] }
+        .joinToString("")
+}

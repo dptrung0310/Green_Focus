@@ -21,6 +21,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.toggleable
@@ -56,9 +57,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.BadgedBox
@@ -85,15 +88,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.ContentCopy
 import coil.compose.AsyncImage
+import com.example.greenfocus.data.model.FriendRequest
 import com.example.greenfocus.data.model.User
-import com.example.greenfocus.ui.screen.social.JoinRoomDialog
-import com.example.greenfocus.ui.screen.social.FriendRequestsDialog
-import com.example.greenfocus.ui.screen.social.ROOM_STATUS_STARTED
-import com.example.greenfocus.ui.screen.social.ROOM_STATUS_WAITING
+import com.example.greenfocus.ui.screen.pomodoro.room.ROOM_STATUS_STARTED
+import com.example.greenfocus.ui.screen.pomodoro.room.ROOM_STATUS_WAITING
+import com.example.greenfocus.ui.screen.pomodoro.room.TeamInvite
+import com.example.greenfocus.ui.screen.pomodoro.room.TeamMember
+import com.example.greenfocus.ui.screen.social.FriendRequestRow
 import com.example.greenfocus.ui.screen.social.SocialUiState
 import com.example.greenfocus.ui.screen.social.SocialViewModel
-import com.example.greenfocus.ui.screen.social.TeamActionButton
-import com.example.greenfocus.ui.screen.social.TeamMember
 import kotlinx.coroutines.launch
 
 @Composable
@@ -106,6 +109,7 @@ fun PomodoroScreen(
     val roomState by homeRoomViewModel.uiState.collectAsState()
 
     LaunchedEffect(roomState.activeRoomId) {
+        pomodoroViewModel.setActiveRoom(roomState.activeRoomId)
         if (roomState.activeRoomId == null) {
             pomodoroViewModel.resetToDefault()
         }
@@ -138,7 +142,8 @@ private fun HomeLandingContent(
 ) {
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
     val socialUiState by socialViewModel.uiState.collectAsState()
-    val invites by socialViewModel.inviteList.collectAsState()
+    val homeRoomUiState by homeRoomViewModel.uiState.collectAsState()
+    val invites = homeRoomUiState.incomingRoomInvites
     val scope = rememberCoroutineScope()
 
     var createError by remember { mutableStateOf("") }
@@ -411,7 +416,7 @@ private fun HomeLandingContent(
                 scope.launch {
                     val result = homeRoomViewModel.joinRoom(invite.roomId)
                     if (result.isSuccess) {
-                        socialViewModel.deleteInvite(invite)
+                        homeRoomViewModel.deleteInvite(invite)
                         showRequestsDialog = false
                     } else {
                         inviteErrorMessage = result.exceptionOrNull()?.message ?: "Không thể vào phòng"
@@ -419,13 +424,259 @@ private fun HomeLandingContent(
                 }
             },
             onDismissInvite = { invite ->
-                socialViewModel.deleteInvite(invite)
+                homeRoomViewModel.deleteInvite(invite)
             },
             onDismiss = {
                 inviteErrorMessage = null
                 showRequestsDialog = false
             }
         )
+    }
+}
+
+@Composable
+private fun TeamActionButton(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+        contentPadding = PaddingValues(16.dp)
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            if (subtitle.isNotEmpty()) {
+                Text(text = subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun JoinRoomDialog(
+    onDismiss: () -> Unit,
+    onJoin: (String) -> Unit,
+    isJoining: Boolean,
+    externalErrorMessage: String
+) {
+    var roomId by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+    val combinedError = if (errorMessage.isNotEmpty()) errorMessage else externalErrorMessage
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Join room",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF2E7D32)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Enter a room code to join",
+                    fontSize = 14.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedTextField(
+                    value = roomId,
+                    onValueChange = {
+                        roomId = it.uppercase()
+                        errorMessage = ""
+                    },
+                    label = { Text("Room code") },
+                    placeholder = { Text("Example: ABC123") },
+                    singleLine = true,
+                    isError = errorMessage.isNotEmpty(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done
+                    ),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF2E7D32),
+                        focusedLabelColor = Color(0xFF2E7D32),
+                        cursorColor = Color(0xFF2E7D32)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (combinedError.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = combinedError,
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFF2E7D32)
+                        )
+                    ) {
+                        Text("Cancel")
+                    }
+
+                    Button(
+                        onClick = {
+                            if (roomId.isBlank()) {
+                                errorMessage = "Please enter a room code"
+                            } else if (roomId.length < 6) {
+                                errorMessage = "Room code must have at least 6 characters"
+                            } else {
+                                onJoin(roomId)
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = !isJoining,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32)
+                        )
+                    ) {
+                        Text(if (isJoining) "Joining..." else "Join")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FriendRequestsDialog(
+    friendRequests: List<FriendRequest>,
+    roomInvites: List<TeamInvite>,
+    inviteErrorMessage: String?,
+    onAcceptFriend: (FriendRequest) -> Unit,
+    onDeclineFriend: (FriendRequest) -> Unit,
+    onJoinRoomInvite: (TeamInvite) -> Unit,
+    onDismissInvite: (TeamInvite) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Invitations", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                if (friendRequests.isEmpty() && roomInvites.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No invitations", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 400.dp)
+                    ) {
+                        items(roomInvites) { invite ->
+                            RoomInviteRow(
+                                invite = invite,
+                                onJoin = { onJoinRoomInvite(invite) },
+                                onDismiss = { onDismissInvite(invite) }
+                            )
+                        }
+                        items(friendRequests) { request ->
+                            FriendRequestRow(
+                                request = request,
+                                onAccept = { onAcceptFriend(request) },
+                                onDecline = { onDeclineFriend(request) }
+                            )
+                        }
+                    }
+                }
+
+                if (!inviteErrorMessage.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = inviteErrorMessage,
+                        color = Color.Red,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Close", color = Color(0xFF2E7D32))
+            }
+        }
+    )
+}
+
+@Composable
+private fun RoomInviteRow(
+    invite: TeamInvite,
+    onJoin: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE8F5E9)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.PersonAdd,
+                contentDescription = null,
+                tint = Color(0xFF2E7D32)
+            )
+        }
+        Column(
+            modifier = Modifier
+                .padding(start = 12.dp)
+                .weight(1f)
+        ) {
+            Text(text = invite.fromName, fontWeight = FontWeight.Bold)
+            Text(
+                text = "invited you to a room",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+        IconButton(onClick = onJoin) {
+            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Red)
+        }
     }
 }
 
@@ -499,6 +750,7 @@ private fun HomeRoomContent(
         .mapNotNull { invite -> invite.toUid.takeIf { it.isNotBlank() } }
         .toSet()
     val disabledInviteIds = invitedIds + pendingInviteIds
+    var handledFocusLostEventId by remember(roomState.activeRoomId) { mutableStateOf<String?>(null) }
 
     val timerScale by animateFloatAsState(
         targetValue = if (pomodoroUiState.isTimerRunning) 1.25f else 1.0f,
@@ -569,9 +821,48 @@ private fun HomeRoomContent(
             }
         } else if (room != null && room.status == ROOM_STATUS_WAITING) {
             if (pomodoroUiState.isTimerRunning) {
-                pomodoroViewModel.stopTimerService(context)
+                pomodoroViewModel.stopTimerService(
+                    context = context,
+                    markFailed = false,
+                    resetSeconds = (room.durationMs / 1000L).toInt()
+                )
             }
         }
+    }
+
+    LaunchedEffect(
+        room?.focusLostEventId,
+        room?.focusLostAt,
+        roomState.currentUserId,
+        roomState.members
+    ) {
+        val focusLostAtMs = room?.focusLostAt?.toDate()?.time ?: return@LaunchedEffect
+        val focusLostEventId = room.focusLostEventId
+            ?: "${roomState.activeRoomId.orEmpty()}_legacy_$focusLostAtMs"
+        if (handledFocusLostEventId == focusLostEventId) return@LaunchedEffect
+
+        val currentUserId = roomState.currentUserId ?: return@LaunchedEffect
+        val currentMember = roomState.members.firstOrNull { it.uid == currentUserId }
+            ?: return@LaunchedEffect
+        if (currentMember.lastHandledFocusLostEventId == focusLostEventId) {
+            handledFocusLostEventId = focusLostEventId
+            return@LaunchedEffect
+        }
+
+        val joinedAtMs = currentMember.joinedAt?.toDate()?.time
+        if (joinedAtMs != null && joinedAtMs > focusLostAtMs) return@LaunchedEffect
+
+        handledFocusLostEventId = focusLostEventId
+        if (pomodoroUiState.isTimerRunning) {
+            pomodoroViewModel.stopTimerService(context)
+        }
+        pomodoroViewModel.recordFailedRoomSession(
+            failureEventId = focusLostEventId,
+            durationMinutes = durationMinutes,
+            treeId = room.treeId.ifBlank { activeTree.id },
+            roomId = roomState.activeRoomId
+        )
+        homeRoomViewModel.markFocusLostEventHandled(focusLostEventId)
     }
 
     LaunchedEffect(invitedIds) {
@@ -855,6 +1146,7 @@ private fun HomeRoomContent(
                 isWaiting && roomState.isHost -> {
                     Button(
                         onClick = {
+                            pomodoroViewModel.resetAfterSession(durationMinutes)
                             homeRoomViewModel.startRoom(durationMs)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),

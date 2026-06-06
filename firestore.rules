@@ -32,6 +32,11 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    // Focus Sessions Rules
+    match /sessions/{userId}/user_sessions/{sessionId} {
+      allow read, write: if isOwner(userId);
+    }
+
     // Team Rooms Rules
     match /rooms/{roomId} {
       allow read, write: if isAuthenticated();

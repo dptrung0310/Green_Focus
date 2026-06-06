@@ -185,6 +185,10 @@ class PomodoroViewModel(
         timerManager.setTimer(safeMinutes)
     }
 
+    fun setActiveRoom(roomId: String?) {
+        timerManager.setActiveRoom(roomId)
+    }
+
     fun startTimerService(context: Context) {
 
         val intent = Intent(context, TimerForegroundService::class.java).apply {
@@ -198,15 +202,43 @@ class PomodoroViewModel(
         }
     }
 
-    fun stopTimerService(context: Context) {
+    fun stopTimerService(context: Context, markFailed: Boolean = true, resetSeconds: Int? = null) {
         val intent = Intent(context, TimerForegroundService::class.java).apply {
-            action = "ACTION_STOP"
+            action = if (markFailed) "ACTION_STOP" else "ACTION_RESET"
+            resetSeconds?.let { putExtra("RESET_SECONDS", it) }
         }
         context.startService(intent)
     }
 
     private fun onTimerFailed() {
         _uiState.update { it.copy(selectedTreeImage = R.drawable.dead_tree)}
+    }
+
+    fun recordFailedRoomSession(
+        failureEventId: String,
+        durationMinutes: Int,
+        treeId: String,
+        roomId: String?
+    ) {
+        dataRepository.setSession(
+            failureEventId,
+            FocusSession(
+                sessionId = failureEventId,
+                treeId = treeId,
+                startTime = System.currentTimeMillis(),
+                durationMinutes = durationMinutes.coerceAtLeast(1),
+                status = "DEAD",
+                isGroupSession = roomId != null,
+                roomId = roomId
+            )
+        )
+        _uiState.update {
+            it.copy(
+                selectedTreeImage = R.drawable.dead_tree,
+                isTimerFinished = false,
+                isTimerFailed = true
+            )
+        }
     }
 
     private fun onTimerFinishedSuccessfully() {

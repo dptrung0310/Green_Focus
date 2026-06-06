@@ -112,6 +112,12 @@ class TimerForegroundService : LifecycleService() {
                 }
                 stopSelf()
             }
+
+            "ACTION_RESET" -> {
+                val resetSeconds = intent.getIntExtra("RESET_SECONDS", timerManager.timerState.value.totalTime)
+                timerManager.resetTimer(resetSeconds)
+                stopSelf()
+            }
         }
         return START_STICKY
     }

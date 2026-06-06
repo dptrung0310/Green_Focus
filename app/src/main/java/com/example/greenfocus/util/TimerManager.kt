@@ -46,6 +46,7 @@ class TimerManager(
     private var scope: CoroutineScope
 ) {
     private var timerJob: Job? = null
+    private var activeRoomId: String? = null
 
     private val _timerState = MutableStateFlow(TimerState())
     private val _userSettings = userSettingRepository.userPreferences.stateIn(
@@ -88,6 +89,24 @@ class TimerManager(
         timerJob?.cancel()
         timerCancelled()
     }
+
+    fun setActiveRoom(roomId: String?) {
+        activeRoomId = roomId
+    }
+
+    fun resetTimer(resetSeconds: Int? = null) {
+        timerJob?.cancel()
+        val nextTime = resetSeconds ?: _timerState.value.totalTime
+        _timerState.update {
+            it.copy(
+                isTimerRunning = false,
+                currentTime = nextTime,
+                totalTime = nextTime,
+                sessionState = SessionState.INIT
+            )
+        }
+    }
+
     fun toggleDeepMode() {
         _timerState.update { it.copy(isDeepModeEnabled = !it.isDeepModeEnabled) }
     }
@@ -102,11 +121,14 @@ class TimerManager(
     }
     fun timerFinished(scope: CoroutineScope) {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
+        val groupRoomId = activeRoomId
         dataRepository.addSession(FocusSession(
             treeId = _timerState.value.currentTree.id,
             startTime = System.currentTimeMillis(),
             durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
-            status = "ALIVE"
+            status = "ALIVE",
+            isGroupSession = groupRoomId != null,
+            roomId = groupRoomId
         ))
         val durationSeconds = _timerState.value.totalTime.toLong()
         val durationMinutes = (durationSeconds / 60).toInt()
@@ -128,12 +150,20 @@ class TimerManager(
 
     fun timerCancelled() {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.FAILED) }
-        dataRepository.addSession(FocusSession(
-            treeId = _timerState.value.currentTree.id,
-            startTime = System.currentTimeMillis(),
-            durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
-            status = "DEAD"
-        ))
+        val groupRoomId = activeRoomId
+        if (groupRoomId == null) {
+            dataRepository.addSession(FocusSession(
+                treeId = _timerState.value.currentTree.id,
+                startTime = System.currentTimeMillis(),
+                durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
+                status = "DEAD"
+            ))
+        } else {
+            Log.d(
+                "SESSION_REPO_TIMER",
+                "Group timer failed; waiting for room failure event $groupRoomId"
+            )
+        }
         Log.d("SESSION_REPO_TIMER", "Timer stopped mid-way");
     }
 }

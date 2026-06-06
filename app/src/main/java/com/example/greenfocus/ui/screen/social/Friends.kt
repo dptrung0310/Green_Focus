@@ -1,7 +1,18 @@
 package com.example.greenfocus.ui.screen.social
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -11,14 +22,26 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +58,6 @@ fun FriendsScreen(
     var showAddFriendDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        // Add Friend Button
         Button(
             onClick = { showAddFriendDialog = true },
             modifier = Modifier
@@ -46,12 +68,11 @@ fun FriendsScreen(
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Thêm bạn bè")
+            Text("Add friend")
         }
 
-        // Friends List Section
         Text(
-            text = "Bạn bè của bạn",
+            text = "Your friends",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -59,12 +80,14 @@ fun FriendsScreen(
 
         if (friends.isEmpty()) {
             Box(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Chưa có bạn bè.\nHãy mời ai đó để cùng nhau trồng cây!",
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    text = "No friends yet.\nInvite someone to grow together.",
+                    textAlign = TextAlign.Center,
                     color = Color.Gray,
                     fontSize = 16.sp
                 )
@@ -84,7 +107,7 @@ fun FriendsScreen(
     if (showAddFriendDialog) {
         AddFriendDialog(
             viewModel = viewModel,
-            onDismiss = { 
+            onDismiss = {
                 showAddFriendDialog = false
                 viewModel.clearSearchResult()
             }
@@ -118,55 +141,13 @@ fun FriendRequestRow(
                 .weight(1f)
         ) {
             Text(text = request.fromDisplayName, fontWeight = FontWeight.Bold)
-            Text(text = "muốn kết bạn với bạn", fontSize = 12.sp, color = Color.Gray)
+            Text(text = "wants to be your friend", fontSize = 12.sp, color = Color.Gray)
         }
         IconButton(onClick = onAccept) {
-            Icon(Icons.Default.Check, contentDescription = "Đồng ý", tint = Color(0xFF2E7D32))
+            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
         }
         IconButton(onClick = onDecline) {
-            Icon(Icons.Default.Close, contentDescription = "Từ chối", tint = Color.Red)
-        }
-    }
-}
-
-@Composable
-fun RoomInviteRow(
-    invite: TeamInvite,
-    onJoin: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color(0xFFE8F5E9)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "👥")
-        }
-        Column(
-            modifier = Modifier
-                .padding(start = 12.dp)
-                .weight(1f)
-        ) {
-            Text(text = invite.fromName, fontWeight = FontWeight.Bold)
-            Text(
-                text = "mời bạn vào phòng",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-        }
-        IconButton(onClick = onJoin) {
-            Icon(Icons.Default.Check, contentDescription = "Đồng ý", tint = Color(0xFF2E7D32))
-        }
-        IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Từ chối", tint = Color.Red)
+            Icon(Icons.Default.Close, contentDescription = "Decline", tint = Color.Red)
         }
     }
 }
@@ -193,17 +174,17 @@ fun AddFriendDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Thêm bạn bè", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Add friend", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Nhập Gmail") },
+                    label = { Text("Enter Gmail") },
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         IconButton(onClick = { viewModel.searchUser(email) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Tìm kiếm")
+                            Icon(Icons.Default.Search, contentDescription = "Search")
                         }
                     },
                     singleLine = true
@@ -211,7 +192,6 @@ fun AddFriendDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Search Result Area
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -221,7 +201,7 @@ fun AddFriendDialog(
                     if (searchResult != null) {
                         val user = searchResult!!
                         val isSent = requestSentStatus[user.uid] ?: false
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
@@ -234,12 +214,12 @@ fun AddFriendDialog(
                                     .clip(CircleShape),
                                 contentScale = ContentScale.Crop
                             )
-                            
+
                             Column(
                                 modifier = Modifier
                                     .padding(start = 12.dp)
                                     .weight(1f)
-                                    .height(56.dp), // Match avatar height
+                                    .height(56.dp),
                                 verticalArrangement = Arrangement.Center
                             ) {
                                 Text(
@@ -260,7 +240,7 @@ fun AddFriendDialog(
                             if (isSent) {
                                 Icon(
                                     Icons.Default.Check,
-                                    contentDescription = "Đã gửi",
+                                    contentDescription = "Sent",
                                     tint = Color(0xFF2E7D32),
                                     modifier = Modifier.size(32.dp)
                                 )
@@ -271,18 +251,21 @@ fun AddFriendDialog(
                                     contentPadding = PaddingValues(horizontal = 8.dp),
                                     modifier = Modifier.height(36.dp)
                                 ) {
-                                    Text("Thêm", fontSize = 12.sp)
+                                    Text("Add", fontSize = 12.sp)
                                 }
                             }
                         }
                     } else if (email.isNotEmpty()) {
-                        Text("Không tìm thấy người dùng", color = Color.Gray)
+                        Text("User not found", color = Color.Gray)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Đóng")
+                androidx.compose.material3.TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Close")
                 }
             }
         }
@@ -306,19 +289,19 @@ fun FriendRow(user: User) {
                 .background(Color(0xFFF5F5F5)),
             contentScale = ContentScale.Crop
         )
-        
+
         Column(
             modifier = Modifier
                 .padding(start = 16.dp)
                 .weight(1f)
         ) {
             Text(
-                text = user.displayName.ifEmpty { "Không rõ" },
+                text = user.displayName.ifEmpty { "Unknown" },
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp
             )
             Text(
-                text = "${user.totalTreesPlanted} cây",
+                text = "${user.totalTreesPlanted} trees",
                 fontSize = 14.sp,
                 color = Color.Gray
             )

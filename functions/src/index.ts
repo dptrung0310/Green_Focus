@@ -186,3 +186,67 @@ export const onRoomInviteCreated = functions.firestore
     );
     return sendToUserDevices(toUid, payload);
   });
+
+/** Save one deterministic dead session per member when a room fails. */
+export const onRoomFocusLost = functions.firestore
+  .document("rooms/{roomId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data();
+    const after = change.after.data();
+    const roomId = context.params.roomId;
+    const focusLostEventId = after.focusLostEventId as string | undefined;
+
+    if (!focusLostEventId ||
+      focusLostEventId === before.focusLostEventId) {
+      return null;
+    }
+
+    const membersSnapshot = await db
+      .collection("rooms")
+      .doc(roomId)
+      .collection("members")
+      .get();
+
+    if (membersSnapshot.empty) {
+      console.log("No room members found for failed room:", roomId);
+      return null;
+    }
+
+    const durationMs = Number(after.durationMs) || 25 * 60 * 1000;
+    const durationMinutes = Math.max(1, Math.floor(durationMs / 60000));
+    const treeId = typeof after.treeId === "string" ?
+      after.treeId :
+      "default_oak";
+    const startTime = Date.now();
+    const batch = db.batch();
+
+    membersSnapshot.forEach((memberDoc) => {
+      const memberData = memberDoc.data();
+      const uid = typeof memberData.uid === "string" ?
+        memberData.uid :
+        memberDoc.id;
+      const sessionRef = db
+        .collection("sessions")
+        .doc(uid)
+        .collection("user_sessions")
+        .doc(focusLostEventId);
+
+      batch.set(sessionRef, {
+        sessionId: focusLostEventId,
+        treeId,
+        startTime,
+        durationMinutes,
+        status: "DEAD",
+        isGroupSession: true,
+        roomId,
+      }, {merge: true});
+    });
+
+    await batch.commit();
+    console.log(
+      "Saved failed group sessions for room:",
+      roomId,
+      focusLostEventId
+    );
+    return null;
+  });

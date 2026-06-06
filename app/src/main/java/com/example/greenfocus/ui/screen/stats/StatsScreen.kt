@@ -28,7 +28,7 @@ import com.example.greenfocus.ui.theme.TextMuted
 // ─────────────────────────────────────────
 
 @Composable
-fun StatsScreen(viewModel: StatsViewModel = viewModel()) {
+fun StatsScreen(viewModel: StatsViewModel = viewModel(factory = StatsViewModel.Factory)) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     Box(
@@ -39,7 +39,7 @@ fun StatsScreen(viewModel: StatsViewModel = viewModel()) {
         when {
             uiState.isLoading  -> LoadingContent(Modifier.align(Alignment.Center))
             uiState.error != null -> ErrorContent(
-                onRetry  = viewModel::loadStats,
+                onRetry  = viewModel::reload,
                 modifier = Modifier.align(Alignment.Center)
             )
             else -> StatsContent(uiState)

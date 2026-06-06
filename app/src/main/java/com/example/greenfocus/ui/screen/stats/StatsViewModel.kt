@@ -2,16 +2,19 @@ package com.example.greenfocus.ui.screen.stats
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.greenfocus.GreenFocusApp
+import com.example.greenfocus.data.repository.DataRepository
 import com.example.greenfocus.data.repository.ForestRepository
 import com.example.greenfocus.data.repository.ProdForestRepository
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -62,7 +65,7 @@ data class DistributionEntry(
     val fraction: Float      // 0..1
 )
 
-/** Raw Firestore document mapped from user_sessions */
+/** Raw session data from DataRepository (mapped from FocusSession model) */
 private data class SessionDoc(
     val durationMinutes: Long,
     val startTime: Long,      // epoch millis
@@ -74,10 +77,11 @@ private data class SessionDoc(
 //  ViewModel
 // ─────────────────────────────────────────
 
-class StatsViewModel(application: Application) : AndroidViewModel(application) {
+class StatsViewModel(
+    application: Application,
+    private val dataRepository: DataRepository
+) : AndroidViewModel(application) {
 
-    private val db               = FirebaseFirestore.getInstance()
-    private val auth             = FirebaseAuth.getInstance()
     private val zone             = ZoneId.systemDefault()
     private val forestRepository : ForestRepository =
         ProdForestRepository(application.applicationContext)
@@ -85,25 +89,38 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(StatsUiState())
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
-    init { loadStats() }
+    init { observeSessions() }
 
-    fun loadStats() {
+    /** Manually re-subscribe to the session flow (e.g. after an error). */
+    fun reload() {
+        observeSessions()
+    }
+
+    // ── Real-time observation via DataRepository ──────────────────────
+    private fun observeSessions() {
         viewModelScope.launch {
             _uiState.value = StatsUiState(isLoading = true)
             try {
-                val uid = auth.currentUser?.uid
-                    ?: throw IllegalStateException("User not logged in")
-
-                val sessions  = fetchSessions(uid)
                 val treeNames = buildTreeNameMap()
-                _uiState.value = buildUiState(sessions, treeNames)
+                dataRepository.getSessions().collect { focusSessions ->
+                    // Convert FocusSession → internal SessionDoc
+                    val sessions = focusSessions.map { fs ->
+                        SessionDoc(
+                            durationMinutes = fs.durationMinutes.toLong(),
+                            startTime       = fs.startTime,
+                            status          = fs.status,
+                            treeId          = fs.treeId.ifBlank { "unknown" }
+                        )
+                    }
+                    _uiState.value = buildUiState(sessions, treeNames)
+                }
             } catch (e: Exception) {
                 _uiState.value = StatsUiState(isLoading = false, error = e.message)
             }
         }
     }
 
-    // ── Tree name map (treeId → display name) ────────────────────
+    // ── Tree name map (treeId → display name) ────────────────────────
     private suspend fun buildTreeNameMap(): Map<String, String> {
         return try {
             val context = getApplication<Application>().applicationContext
@@ -115,26 +132,7 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // ── Firestore query ──────────────────
-
-    private suspend fun fetchSessions(uid: String): List<SessionDoc> {
-        val snapshot = db
-            .collection("sessions")
-            .document(uid)
-            .collection("user_sessions")
-            .get()
-            .await()
-
-        return snapshot.documents.mapNotNull { doc ->
-            val duration = doc.getLong("durationMinutes") ?: return@mapNotNull null
-            val startTime = doc.getLong("startTime")      ?: return@mapNotNull null
-            val status    = doc.getString("status")       ?: return@mapNotNull null
-            val treeId    = doc.getString("treeId")       ?: "unknown"
-            SessionDoc(duration, startTime, status, treeId)
-        }
-    }
-
-    // ── Business logic ───────────────────
+    // ── Business logic ────────────────────────────────────────────────
 
     private fun buildUiState(sessions: List<SessionDoc>, treeNames: Map<String, String>): StatsUiState {
         val today   = LocalDate.now(zone)
@@ -243,4 +241,15 @@ class StatsViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
 
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as GreenFocusApp)
+                StatsViewModel(
+                    application    = application,
+                    dataRepository = application.container.dataRepository
+                )
+            }
+        }
+    }
 }

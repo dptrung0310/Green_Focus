@@ -480,7 +480,7 @@ private fun JoinRoomDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Join room",
+                    text = "Vào phòng",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2E7D32)
@@ -489,7 +489,7 @@ private fun JoinRoomDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Enter a room code to join",
+                    text = "Nhập mã phòng để tham gia",
                     fontSize = 14.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center
@@ -503,8 +503,8 @@ private fun JoinRoomDialog(
                         roomId = it.uppercase()
                         errorMessage = ""
                     },
-                    label = { Text("Room code") },
-                    placeholder = { Text("Example: ABC123") },
+                    label = { Text("Mã phòng") },
+                    placeholder = { Text("Ví dụ: ABC123") },
                     singleLine = true,
                     isError = errorMessage.isNotEmpty(),
                     keyboardOptions = KeyboardOptions(
@@ -541,15 +541,15 @@ private fun JoinRoomDialog(
                             contentColor = Color(0xFF2E7D32)
                         )
                     ) {
-                        Text("Cancel")
+                        Text("Hủy")
                     }
 
                     Button(
                         onClick = {
                             if (roomId.isBlank()) {
-                                errorMessage = "Please enter a room code"
+                                errorMessage = "Vui lòng nhập mã phòng"
                             } else if (roomId.length < 6) {
-                                errorMessage = "Room code must have at least 6 characters"
+                                errorMessage = "Mã phòng phải có ít nhất 6 ký tự"
                             } else {
                                 onJoin(roomId)
                             }
@@ -560,7 +560,7 @@ private fun JoinRoomDialog(
                             containerColor = Color(0xFF2E7D32)
                         )
                     ) {
-                        Text(if (isJoining) "Joining..." else "Join")
+                        Text(if (isJoining) "Đang vào..." else "Vào phòng")
                     }
                 }
             }
@@ -581,7 +581,7 @@ private fun FriendRequestsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Invitations", fontWeight = FontWeight.Bold) },
+        title = { Text("Lời mời", fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 if (friendRequests.isEmpty() && roomInvites.isEmpty()) {
@@ -591,7 +591,7 @@ private fun FriendRequestsDialog(
                             .height(100.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No invitations", color = Color.Gray)
+                        Text("Không có lời mời", color = Color.Gray)
                     }
                 } else {
                     LazyColumn(
@@ -628,7 +628,7 @@ private fun FriendRequestsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = Color(0xFF2E7D32))
+                Text("Đóng", color = Color(0xFF2E7D32))
             }
         }
     )
@@ -666,16 +666,16 @@ private fun RoomInviteRow(
         ) {
             Text(text = invite.fromName, fontWeight = FontWeight.Bold)
             Text(
-                text = "invited you to a room",
+                text = "đã mời bạn vào phòng",
                 fontSize = 12.sp,
                 color = Color.Gray
             )
         }
         IconButton(onClick = onJoin) {
-            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
+            Icon(Icons.Default.Check, contentDescription = "Chấp nhận", tint = Color(0xFF2E7D32))
         }
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Red)
+            Icon(Icons.Default.Close, contentDescription = "Bỏ qua", tint = Color.Red)
         }
     }
 }
@@ -1233,7 +1233,7 @@ private fun HomeRoomContent(
         AlertDialog(
             onDismissRequest = { homeRoomViewModel.leaveRoom() },
             title = { Text("Phòng đã bị xóa") },
-            text = { Text("Phòng không còn tồn tại, bạn sẽ được đưa về Home.") },
+            text = { Text("Phòng không còn tồn tại, bạn sẽ được đưa về trang chính.") },
             confirmButton = {
                 TextButton(onClick = { homeRoomViewModel.leaveRoom() }) {
                     Text("Quay lại")
@@ -1638,7 +1638,7 @@ fun TreeSelectionRow(
                     ) {
                         Image(
                             painter = painterResource(id = tree.imageStaticBig),
-                            contentDescription = "Select tree ${tree.id}",
+                            contentDescription = "Chọn cây ${tree.id}",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(12.dp) // Keeps the tree image safely inside the borders

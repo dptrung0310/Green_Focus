@@ -68,11 +68,11 @@ fun FriendsScreen(
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Add friend")
+            Text("Thêm bạn bè")
         }
 
         Text(
-            text = "Your friends",
+            text = "Bạn bè của bạn",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -86,7 +86,7 @@ fun FriendsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No friends yet.\nInvite someone to grow together.",
+                    text = "Chưa có bạn bè nào.\nHãy mời ai đó cùng phát triển.",
                     textAlign = TextAlign.Center,
                     color = Color.Gray,
                     fontSize = 16.sp
@@ -141,13 +141,13 @@ fun FriendRequestRow(
                 .weight(1f)
         ) {
             Text(text = request.fromDisplayName, fontWeight = FontWeight.Bold)
-            Text(text = "wants to be your friend", fontSize = 12.sp, color = Color.Gray)
+            Text(text = "muốn kết bạn với bạn", fontSize = 12.sp, color = Color.Gray)
         }
         IconButton(onClick = onAccept) {
-            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
+            Icon(Icons.Default.Check, contentDescription = "Chấp nhận", tint = Color(0xFF2E7D32))
         }
         IconButton(onClick = onDecline) {
-            Icon(Icons.Default.Close, contentDescription = "Decline", tint = Color.Red)
+            Icon(Icons.Default.Close, contentDescription = "Từ chối", tint = Color.Red)
         }
     }
 }
@@ -174,17 +174,17 @@ fun AddFriendDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Add friend", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Thêm bạn bè", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
 
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Enter Gmail") },
+                    label = { Text("Nhập Gmail") },
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         IconButton(onClick = { viewModel.searchUser(email) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+                            Icon(Icons.Default.Search, contentDescription = "Tìm kiếm")
                         }
                     },
                     singleLine = true
@@ -240,7 +240,7 @@ fun AddFriendDialog(
                             if (isSent) {
                                 Icon(
                                     Icons.Default.Check,
-                                    contentDescription = "Sent",
+                                    contentDescription = "Đã gửi",
                                     tint = Color(0xFF2E7D32),
                                     modifier = Modifier.size(32.dp)
                                 )
@@ -251,12 +251,12 @@ fun AddFriendDialog(
                                     contentPadding = PaddingValues(horizontal = 8.dp),
                                     modifier = Modifier.height(36.dp)
                                 ) {
-                                    Text("Add", fontSize = 12.sp)
+                                    Text("Thêm", fontSize = 12.sp)
                                 }
                             }
                         }
                     } else if (email.isNotEmpty()) {
-                        Text("User not found", color = Color.Gray)
+                        Text("Không tìm thấy người dùng", color = Color.Gray)
                     }
                 }
 
@@ -265,7 +265,7 @@ fun AddFriendDialog(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
-                    Text("Close")
+                    Text("Đóng")
                 }
             }
         }
@@ -296,12 +296,12 @@ fun FriendRow(user: User) {
                 .weight(1f)
         ) {
             Text(
-                text = user.displayName.ifEmpty { "Unknown" },
+                text = user.displayName.ifEmpty { "Không rõ" },
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp
             )
             Text(
-                text = "${user.totalTreesPlanted} trees",
+                text = "${user.totalTreesPlanted} cây",
                 fontSize = 14.sp,
                 color = Color.Gray
             )

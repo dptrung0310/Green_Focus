@@ -1,4 +1,4 @@
-package com.example.greenfocus.ui.screen.social
+﻿package com.example.greenfocus.ui.screen.social
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun SocialScreen(
     viewModel: SocialViewModel = viewModel()
 ) {
-    var selectedTab by remember { mutableStateOf("Leaderboard") }
+    var selectedTab by remember { mutableStateOf("Bảng xếp hạng") }
     val uiState by viewModel.uiState.collectAsState()
 
     Column(
@@ -45,14 +45,14 @@ fun SocialScreen(
             .statusBarsPadding()
     ) {
         Text(
-            text = "Community",
+            text = "Cộng đồng",
             fontSize = 32.sp,
             fontWeight = FontWeight.Bold,
             color = Color(0xFF2E7D32)
         )
 
         Text(
-            text = "Compete with your friends",
+            text = "Thi đua với bạn bè của bạn",
             fontSize = 16.sp,
             color = Color.Gray,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -77,8 +77,8 @@ fun SocialScreen(
 
                 is SocialUiState.Success -> {
                     when (selectedTab) {
-                        "Leaderboard" -> LeaderboardScreen(users = state.leaderboard)
-                        "Friends" -> FriendsScreen(
+                        "Bảng xếp hạng" -> LeaderboardScreen(users = state.leaderboard)
+                        "Bạn bè" -> FriendsScreen(
                             friends = state.friends,
                             viewModel = viewModel
                         )
@@ -87,7 +87,7 @@ fun SocialScreen(
 
                 is SocialUiState.Error -> {
                     Text(
-                        text = "Error: ${state.message}",
+                        text = "Lỗi: ${state.message}",
                         color = Color.Red,
                         modifier = Modifier.align(Alignment.Center)
                     )
@@ -106,7 +106,7 @@ private fun RowTabs(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        listOf("Leaderboard", "Friends").forEach { tab ->
+        listOf("Bảng xếp hạng", "Bạn bè").forEach { tab ->
             val isSelected = selectedTab == tab
             Button(
                 onClick = { onSelectedTabChange(tab) },

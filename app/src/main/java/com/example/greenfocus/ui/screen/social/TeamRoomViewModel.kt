@@ -1,11 +1,17 @@
 package com.example.greenfocus.ui.screen.social
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.data.model.User
 import com.example.greenfocus.data.repository.ProdUserRepository
 import com.example.greenfocus.data.repository.UserRepository
 import com.example.greenfocus.di.FirebaseModule
+import com.example.greenfocus.util.TimerManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +36,9 @@ data class TeamRoomUiState(
 )
 
 class TeamRoomViewModel(
-    private val teamRoomRepository: TeamRoomRepository = TeamRoomRepository(),
-    private val userRepository: UserRepository = ProdUserRepository()
+    private val teamRoomRepository: TeamRoomRepository,
+    private val userRepository: UserRepository,
+    private val timerManager: TimerManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TeamRoomUiState())
@@ -216,6 +223,22 @@ class TeamRoomViewModel(
                 isRunning = false,
                 isHalfDone = false
             )
+        }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as GreenFocusApp)
+                val timerManager = application.container.timerManager
+                val userRepository = application.container.userRepository
+                val teamRoomRepository = TeamRoomRepository()
+                TeamRoomViewModel(
+                    teamRoomRepository = teamRoomRepository,
+                    userRepository = userRepository,
+                    timerManager = timerManager
+                )
+            }
         }
     }
 }

@@ -46,12 +46,12 @@ fun FriendsScreen(
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Add Friend")
+            Text("Thêm bạn bè")
         }
 
         // Friends List Section
         Text(
-            text = "Your Friends",
+            text = "Bạn bè của bạn",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
             modifier = Modifier.padding(vertical = 8.dp)
@@ -63,7 +63,7 @@ fun FriendsScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "No friends yet.\nInvite someone to plant with you!",
+                    text = "Chưa có bạn bè.\nHãy mời ai đó để cùng nhau trồng cây!",
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     color = Color.Gray,
                     fontSize = 16.sp
@@ -118,13 +118,13 @@ fun FriendRequestRow(
                 .weight(1f)
         ) {
             Text(text = request.fromDisplayName, fontWeight = FontWeight.Bold)
-            Text(text = "wants to be your friend", fontSize = 12.sp, color = Color.Gray)
+            Text(text = "muốn kết bạn với bạn", fontSize = 12.sp, color = Color.Gray)
         }
         IconButton(onClick = onAccept) {
-            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
+            Icon(Icons.Default.Check, contentDescription = "Đồng ý", tint = Color(0xFF2E7D32))
         }
         IconButton(onClick = onDecline) {
-            Icon(Icons.Default.Close, contentDescription = "Decline", tint = Color.Red)
+            Icon(Icons.Default.Close, contentDescription = "Từ chối", tint = Color.Red)
         }
     }
 }
@@ -163,10 +163,10 @@ fun RoomInviteRow(
             )
         }
         IconButton(onClick = onJoin) {
-            Icon(Icons.Default.Check, contentDescription = "Accept", tint = Color(0xFF2E7D32))
+            Icon(Icons.Default.Check, contentDescription = "Đồng ý", tint = Color(0xFF2E7D32))
         }
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Dismiss", tint = Color.Red)
+            Icon(Icons.Default.Close, contentDescription = "Từ chối", tint = Color.Red)
         }
     }
 }
@@ -193,17 +193,17 @@ fun AddFriendDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Add Friend", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text(text = "Thêm bạn bè", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
-                    label = { Text("Enter Gmail") },
+                    label = { Text("Nhập Gmail") },
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         IconButton(onClick = { viewModel.searchUser(email) }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+                            Icon(Icons.Default.Search, contentDescription = "Tìm kiếm")
                         }
                     },
                     singleLine = true
@@ -260,7 +260,7 @@ fun AddFriendDialog(
                             if (isSent) {
                                 Icon(
                                     Icons.Default.Check,
-                                    contentDescription = "Sent",
+                                    contentDescription = "Đã gửi",
                                     tint = Color(0xFF2E7D32),
                                     modifier = Modifier.size(32.dp)
                                 )
@@ -271,18 +271,18 @@ fun AddFriendDialog(
                                     contentPadding = PaddingValues(horizontal = 8.dp),
                                     modifier = Modifier.height(36.dp)
                                 ) {
-                                    Text("Add", fontSize = 12.sp)
+                                    Text("Thêm", fontSize = 12.sp)
                                 }
                             }
                         }
                     } else if (email.isNotEmpty()) {
-                        Text("No user found", color = Color.Gray)
+                        Text("Không tìm thấy người dùng", color = Color.Gray)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End)) {
-                    Text("Close")
+                    Text("Đóng")
                 }
             }
         }
@@ -313,12 +313,12 @@ fun FriendRow(user: User) {
                 .weight(1f)
         ) {
             Text(
-                text = user.displayName.ifEmpty { "Unknown" },
+                text = user.displayName.ifEmpty { "Không rõ" },
                 fontWeight = FontWeight.Medium,
                 fontSize = 16.sp
             )
             Text(
-                text = "${user.totalTreesPlanted} trees",
+                text = "${user.totalTreesPlanted} cây",
                 fontSize = 14.sp,
                 color = Color.Gray
             )

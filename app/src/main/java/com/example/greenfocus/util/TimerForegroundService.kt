@@ -6,6 +6,8 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
+import android.content.Context
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.os.Build
 import android.util.Log
@@ -63,18 +65,32 @@ class TimerForegroundService : LifecycleService() {
         }
 
         //If DEEP MODE: Activate app usage detection
-        if (!timerManager.timerState.value.isDeepModeEnabled) return
-        lifecycleScope.launch {
-            Log.d("TIMER_MANAGER", "getUsageStatsStream activated")
-            getUsageStatsStream(usageStatsManager).collect { state ->
-                //TODO: Right now it will only allow for quitting and resuming to the app. Have to solve the app picker problem.
-                val appList = currentTimerConfigs.deepModeAllowedApps
-                Log.d("TIMER_MANAGER", "Valid app = " + appList.any { app -> state == app })
-                if (!appList.any { app -> state == app }) {
-                    playSound(Sound.LOSE)
-                    timerManager.pauseTimer()
-                    notificationManager.notify(FAILED_NOTIFICATION_ID, buildFailedNotification())
-                    stopSelf()
+        if (timerManager.timerState.value.isDeepModeEnabled) {
+            val serviceStartTime = System.currentTimeMillis()
+            lifecycleScope.launch {
+                Log.d("TIMER_MANAGER", "getUsageStatsStream activated")
+                getUsageStatsStream(usageStatsManager, serviceStartTime).collect { state ->
+                    if (!isScreenInteractive()) {
+                        Log.d("TIMER_MANAGER", "Screen is not interactive, skipping check.")
+                        return@collect
+                    }
+                    
+                    val allowedUserApps = timerManager.timerState.value.deepModeAllowedApps
+                    val systemApps = setOf(
+                        packageName,
+                        "com.android.systemui",
+                        "com.android.keyguard"
+                    )
+                    val launcherApps = getLauncherPackages()
+                    val allAllowedApps = allowedUserApps + systemApps + launcherApps
+
+                    Log.d("TIMER_MANAGER", "Active app = $state. Allowed = ${allAllowedApps.contains(state)}")
+                    if (!allAllowedApps.contains(state)) {
+                        playSound(Sound.LOSE)
+                        timerManager.pauseTimer()
+                        notificationManager.notify(FAILED_NOTIFICATION_ID, buildFailedNotification())
+                        stopSelf()
+                    }
                 }
             }
         }
@@ -197,27 +213,54 @@ class TimerForegroundService : LifecycleService() {
         }
     }
 
-    private fun getUsageStatsStream(usageStatsManager: UsageStatsManager) : Flow<String> = flow {
+    private fun getUsageStatsStream(usageStatsManager: UsageStatsManager, serviceStartTime: Long) : Flow<String> = flow {
         while (true) {
             val endTime = System.currentTimeMillis()
-            val startTime = endTime - 10000
-            val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
-            val event = UsageEvents.Event()
-            var latestApp: String? = null
+            val startTime = serviceStartTime.coerceAtLeast(endTime - 60000)
+            if (endTime > startTime) {
+                val usageEvents = usageStatsManager.queryEvents(startTime, endTime)
+                val event = UsageEvents.Event()
+                var latestApp: String? = null
+                var latestTime = 0L
 
-            while (usageEvents.hasNextEvent()) {
-                usageEvents.getNextEvent(event)
-                if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
-                    latestApp = event.packageName
+                while (usageEvents.hasNextEvent()) {
+                    usageEvents.getNextEvent(event)
+                    if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                        if (event.timeStamp > latestTime) {
+                            latestApp = event.packageName
+                            latestTime = event.timeStamp
+                        }
+                    }
+                }
+                Log.d("TIMER_MANAGER", "Usage stats checking...")
+                if (latestApp != null) {
+                    Log.d("TIMER_MANAGER", "Latest resumed app: $latestApp at $latestTime")
+                    emit(latestApp)
                 }
             }
-            Log.d("TIMER_MANAGER", "Usage stats checking...")
-            if (latestApp != null) {
-                Log.d("TIMER_MANAGER", "Activity resumed: $latestApp")
-                emit(latestApp) // Send the app name to whoever is listening
-            }
-            delay(2500)
+            delay(2000)
         }
+    }
+
+    private fun isScreenInteractive(): Boolean {
+        val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+        return pm.isInteractive
+    }
+
+    private fun getLauncherPackages(): Set<String> {
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+        }
+        val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.queryIntentActivities(
+                intent,
+                PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong())
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        }
+        return resolveInfos.map { it.activityInfo.packageName }.toSet()
     }
 
     private fun playSound(resId: Int) {

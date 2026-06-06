@@ -97,6 +97,9 @@ class TimerManager(
     fun setTimer(minutes: Int) {
         _timerState.update { it.copy(currentTime = 60 * minutes, totalTime = 60 * minutes, sessionState = SessionState.INIT) }
     }
+    fun setTimerSeconds(seconds: Int) {
+        _timerState.update { it.copy(currentTime = seconds, totalTime = seconds, sessionState = SessionState.INIT) }
+    }
     fun timerFinished(scope: CoroutineScope) {
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
         dataRepository.addSession(FocusSession(
@@ -105,10 +108,20 @@ class TimerManager(
             durationMinutes = _timerState.value.totalTime / 60, // The time they successfully completed
             status = "ALIVE"
         ))
+        val durationSeconds = _timerState.value.totalTime.toLong()
+        val durationMinutes = (durationSeconds / 60).toInt()
+        val coinsIncrement = durationMinutes
+        val treesPlantedIncrement = 1
+        val xpIncrement = durationMinutes * 10
         scope.launch { try {
-            userRepository.addCoins(timerState.value.totalTime / 60)
-        } catch (_: Exception) {
-            Log.d("USER_REPO", "Timer finished, but error updating coins value")
+            userRepository.updateFocusStats(
+                coinsIncrement = coinsIncrement,
+                durationSeconds = durationSeconds,
+                treesPlantedIncrement = treesPlantedIncrement,
+                xpIncrement = xpIncrement
+            )
+        } catch (e: Exception) {
+            Log.d("USER_REPO", "Timer finished, but error updating focus stats: ${e.message}")
         } }
         Log.d("SESSION_REPO_TIMER", "Timer finished normally");
     }

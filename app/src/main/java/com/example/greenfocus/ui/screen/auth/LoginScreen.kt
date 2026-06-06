@@ -47,7 +47,7 @@ fun LoginScreen(
             AuthTreeLogo(modifier = Modifier.padding(bottom = 32.dp))
 
             Text(
-                text = "Welcome Back",
+                text = "Chào mừng quay trở lại",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = AuthGreenDark
@@ -56,7 +56,7 @@ fun LoginScreen(
             )
 
             Text(
-                text = "Sign in to continue growing",
+                text = "Đăng nhập để tiếp tục phát triển",
                 color = Color.Gray,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
@@ -75,7 +75,7 @@ fun LoginScreen(
             AuthTextField(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = "Password",
+                placeholder = "Mật khẩu",
                 icon = Icons.Default.Lock,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -85,7 +85,7 @@ fun LoginScreen(
                 onClick = { /* Handle Forgot Password */ },
                 modifier = Modifier.align(Alignment.Start)
             ) {
-                Text("Forgot Password?", color = AuthGreenLight, style = MaterialTheme.typography.bodySmall)
+                Text("Quên mật khẩu?", color = AuthGreenLight, style = MaterialTheme.typography.bodySmall)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -94,7 +94,7 @@ fun LoginScreen(
                 CircularProgressIndicator(color = AuthGreenLight)
             } else {
                 AuthGradientButton(
-                    text = "Sign In",
+                    text = "Đăng nhập",
                     onClick = { viewModel.login(email, password) { onNavigateToHome() } }
                 )
             }
@@ -105,9 +105,9 @@ fun LoginScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text("Don't have an account?", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                Text("Chưa có tài khoản?", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = onNavigateToRegister) {
-                    Text("Sign Up", color = AuthGreenLight, fontWeight = FontWeight.Bold)
+                    Text("Đăng ký", color = AuthGreenLight, fontWeight = FontWeight.Bold)
                 }
             }
 

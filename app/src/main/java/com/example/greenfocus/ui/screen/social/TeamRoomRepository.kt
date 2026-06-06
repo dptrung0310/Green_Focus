@@ -56,6 +56,10 @@ class TeamRoomRepository(
         if (!roomSnapshot.exists()) {
             throw IllegalStateException("Room does not exist")
         }
+        val status = roomSnapshot.getString("status") ?: ROOM_STATUS_WAITING
+        if (status == ROOM_STATUS_STARTED) {
+            throw IllegalStateException("Phòng đã bắt đầu tập trung và bị khóa")
+        }
         val memberData = mapOf(
             "uid" to user.uid,
             "displayName" to user.displayName,
@@ -201,6 +205,12 @@ class TeamRoomRepository(
     }
 
     suspend fun sendInvite(roomId: String, friendUid: String, fromUser: User): Result<Unit> = runCatching {
+        val roomSnapshot = roomDoc(roomId).get().await()
+        val status = roomSnapshot.getString("status") ?: ROOM_STATUS_WAITING
+        if (status == ROOM_STATUS_STARTED) {
+            throw IllegalStateException("Phòng đã bắt đầu tập trung và bị khóa")
+        }
+
         val existing = roomInvitesCol(roomId)
             .whereEqualTo("toUid", friendUid)
             .limit(1)

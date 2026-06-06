@@ -54,7 +54,7 @@ fun RegisterScreen(
             AuthTreeLogo(modifier = Modifier.padding(bottom = 32.dp))
 
             Text(
-                text = "Create Account",
+                text = "Tạo tài khoản",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = AuthGreenDark
@@ -63,7 +63,7 @@ fun RegisterScreen(
             )
 
             Text(
-                text = "Start your focus journey",
+                text = "Bắt đầu hành trình tập trung của bạn",
                 color = Color.Gray,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(bottom = 32.dp)
@@ -72,7 +72,7 @@ fun RegisterScreen(
             AuthTextField(
                 value = name,
                 onValueChange = { name = it },
-                placeholder = "Full Name",
+                placeholder = "Họ và tên",
                 icon = Icons.Default.Person
             )
 
@@ -91,7 +91,7 @@ fun RegisterScreen(
             AuthTextField(
                 value = password,
                 onValueChange = { password = it },
-                placeholder = "Password",
+                placeholder = "Mật khẩu",
                 icon = Icons.Default.Lock,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -102,7 +102,7 @@ fun RegisterScreen(
             AuthTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                placeholder = "Confirm Password",
+                placeholder = "Xác nhận mật khẩu",
                 icon = Icons.Default.Lock,
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
@@ -114,7 +114,7 @@ fun RegisterScreen(
                 CircularProgressIndicator(color = AuthGreenLight)
             } else {
                 AuthGradientButton(
-                    text = "Create Account",
+                    text = "Đăng ký",
                     onClick = {
                         localError = null
                         if (password != confirmPassword) {
@@ -132,9 +132,9 @@ fun RegisterScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
-                Text("Already have an account?", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
+                Text("Đã có tài khoản?", color = Color.Gray, style = MaterialTheme.typography.bodySmall)
                 TextButton(onClick = onNavigateToLogin) {
-                    Text("Sign In", color = AuthGreenLight, fontWeight = FontWeight.Bold)
+                    Text("Đăng nhập", color = AuthGreenLight, fontWeight = FontWeight.Bold)
                 }
             }
 

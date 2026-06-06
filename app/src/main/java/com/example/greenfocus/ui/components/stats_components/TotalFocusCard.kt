@@ -26,8 +26,8 @@ fun TotalFocusCard(totalMinutes: Int, modifier: Modifier = Modifier) {
     val minutes = totalMinutes % 60
 
     val timeText = when {
-        hours > 0 -> "${hours}h ${minutes}m"
-        else      -> "${minutes}m"
+        hours > 0 -> "${hours}g ${minutes}p"
+        else      -> "${minutes}p"
     }
 
     Box(
@@ -41,7 +41,7 @@ fun TotalFocusCard(totalMinutes: Int, modifier: Modifier = Modifier) {
     ) {
         Column {
             Text(
-                text = "Total Focus Time",
+                text = "Tổng thời gian tập trung",
                 color = Color.White.copy(alpha = 0.85f),
                 fontSize = 13.sp
             )
@@ -57,7 +57,7 @@ fun TotalFocusCard(totalMinutes: Int, modifier: Modifier = Modifier) {
 
             Spacer(Modifier.height(2.dp))
             Text(
-                text = "This month",
+                text = "Tháng này",
                 color = Color.White.copy(alpha = 0.7f),
                 fontSize = 12.sp
             )

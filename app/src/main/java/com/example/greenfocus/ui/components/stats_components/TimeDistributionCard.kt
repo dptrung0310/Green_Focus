@@ -50,7 +50,7 @@ fun TimeDistributionCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text       = "Time Distribution",
+                text       = "Phân bổ thời gian",
                 fontSize   = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 color      = TextDark

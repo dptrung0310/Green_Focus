@@ -1,4 +1,4 @@
-﻿package com.example.greenfocus.ui.screen.social
+package com.example.greenfocus.ui.screen.social
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,7 +28,9 @@ fun TeamActionButton(title: String, subtitle: String, onClick: () -> Unit) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(text = title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(text = subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+            if (subtitle.isNotEmpty()) {
+                Text(text = subtitle, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+            }
         }
     }
 }
@@ -57,7 +59,7 @@ fun JoinRoomDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Join Room",
+                    text = "Tham gia phòng",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF2E7D32)
@@ -66,7 +68,7 @@ fun JoinRoomDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Enter the room code to join",
+                    text = "Nhập mã phòng để tham gia",
                     fontSize = 14.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center
@@ -80,8 +82,8 @@ fun JoinRoomDialog(
                         roomId = it.uppercase()
                         errorMessage = ""
                     },
-                    label = { Text("Room ID") },
-                    placeholder = { Text("e.g., ABC123") },
+                    label = { Text("Mã phòng") },
+                    placeholder = { Text("Ví dụ: ABC123") },
                     singleLine = true,
                     isError = errorMessage.isNotEmpty(),
                     keyboardOptions = KeyboardOptions(
@@ -118,15 +120,15 @@ fun JoinRoomDialog(
                             contentColor = Color(0xFF2E7D32)
                         )
                     ) {
-                        Text("Cancel")
+                        Text("Hủy")
                     }
 
                     Button(
                         onClick = {
                             if (roomId.isBlank()) {
-                                errorMessage = "Please enter a room ID"
+                                errorMessage = "Vui lòng nhập mã phòng"
                             } else if (roomId.length < 6) {
-                                errorMessage = "Room ID must be at least 6 characters"
+                                errorMessage = "Mã phòng phải có ít nhất 6 ký tự"
                             } else {
                                 onJoin(roomId)
                             }
@@ -137,7 +139,7 @@ fun JoinRoomDialog(
                             containerColor = Color(0xFF2E7D32)
                         )
                     ) {
-                        Text(if (isJoining) "Joining..." else "Join")
+                        Text(if (isJoining) "Đang tham gia..." else "Tham gia")
                     }
                 }
             }

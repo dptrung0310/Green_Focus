@@ -59,9 +59,9 @@ private fun LoadingContent(modifier: Modifier = Modifier) {
 @Composable
 private fun ErrorContent(onRetry: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("Oops! Could not load stats.", color = TextDark, fontWeight = FontWeight.SemiBold)
+        Text("Ối! Không thể tải dữ liệu thống kê.", color = TextDark, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
-        TextButton(onClick = onRetry) { Text("Retry", color = BannerGreen) }
+        TextButton(onClick = onRetry) { Text("Thử lại", color = BannerGreen) }
     }
 }
 
@@ -80,8 +80,8 @@ private fun StatsContent(state: StatsUiState) {
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Header
-        Text("Analytics",       fontSize = 26.sp, fontWeight = FontWeight.Bold, color = BannerGreen)
-        Text("Track your progress", fontSize = 14.sp, color = TextMuted, modifier = Modifier.offset(y = (-8).dp))
+        Text("Phân tích",       fontSize = 26.sp, fontWeight = FontWeight.Bold, color = BannerGreen)
+        Text("Theo dõi tiến trình của bạn", fontSize = 14.sp, color = TextMuted, modifier = Modifier.offset(y = (-8).dp))
 
         //Total Focus Card
         TotalFocusCard(totalMinutes = state.totalFocusMinutesThisMonth)

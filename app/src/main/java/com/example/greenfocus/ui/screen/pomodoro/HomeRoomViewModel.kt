@@ -8,6 +8,7 @@ import com.example.greenfocus.data.repository.ProdUserRepository
 import com.example.greenfocus.data.repository.UserRepository
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.ui.screen.social.DEFAULT_ROOM_DURATION_MS
+import com.example.greenfocus.ui.screen.social.ROOM_STATUS_STARTED
 import com.example.greenfocus.ui.screen.social.TeamInvite
 import com.example.greenfocus.ui.screen.social.TeamMember
 import com.example.greenfocus.ui.screen.social.TeamRoom
@@ -36,6 +37,7 @@ data class HomeRoomUiState(
     val roomInvites: List<TeamInvite> = emptyList(),
     val isHost: Boolean = false,
     val roomClosed: Boolean = false,
+    val focusLostMessage: String? = null,
     val errorMessage: String? = null
 )
 
@@ -51,6 +53,8 @@ class HomeRoomViewModel(
     private var currentUser: User? = null
     private var hasSeenRoom = false
     private var exitCleanupHandled = false
+    private var lastStatus: String? = null
+    private var lastFocusLostAtMsSeen: Long? = null
 
     init {
         viewModelScope.launch {
@@ -78,6 +82,8 @@ class HomeRoomViewModel(
     private fun enterRoom(id: String) {
         hasSeenRoom = false
         exitCleanupHandled = false
+        lastStatus = null
+        lastFocusLostAtMsSeen = null
         _uiState.update { HomeRoomUiState(activeRoomId = id) }
         observeJob?.cancel()
         observeJob = viewModelScope.launch {
@@ -90,6 +96,8 @@ class HomeRoomViewModel(
             }.collect { (room, members, invites) ->
                 val uid = currentUser?.uid ?: FirebaseModule.auth.currentUser?.uid
                 if (room != null) hasSeenRoom = true
+                val currentMember = members.firstOrNull { it.uid == uid }
+                val focusLostMsg = resolveFocusLostMessage(room, currentMember)
                 _uiState.update {
                     it.copy(
                         room = room,
@@ -98,6 +106,7 @@ class HomeRoomViewModel(
                         isHost = !uid.isNullOrBlank() && room?.hostId == uid,
                         // Distinguish "still loading" (null before first load) from "deleted" (null after).
                         roomClosed = hasSeenRoom && room == null,
+                        focusLostMessage = focusLostMsg,
                         errorMessage = null
                     )
                 }
@@ -142,6 +151,49 @@ class HomeRoomViewModel(
         viewModelScope.launch {
             teamRoomRepository.updateRoomDuration(id, durationMs)
                 .onFailure { Log.e(TAG, "updateRoomDuration failed", it) }
+        }
+    }
+
+    fun reportFocusLost() {
+        val id = _uiState.value.activeRoomId ?: return
+        val user = currentUser ?: return
+        val room = _uiState.value.room ?: return
+        if (room.status != ROOM_STATUS_STARTED) return
+        viewModelScope.launch {
+            teamRoomRepository.markFocusLost(id, user)
+                .onFailure { Log.e(TAG, "reportFocusLost failed", it) }
+        }
+    }
+
+    fun clearFocusLostMessage() {
+        _uiState.update { it.copy(focusLostMessage = null) }
+    }
+
+    private fun resolveFocusLostMessage(room: TeamRoom?, currentMember: TeamMember?): String? {
+        val status = room?.status
+        val previousStatus = lastStatus
+        lastStatus = status
+
+        val focusLostAtMs = room?.focusLostAt?.toDate()?.time
+        if (currentMember == null) return null
+        val joinedAtMs = currentMember.joinedAt?.toDate()?.time
+
+        if (focusLostAtMs != null) {
+            val joinedAfterEvent = joinedAtMs != null && joinedAtMs > focusLostAtMs
+            val isNewEvent = lastFocusLostAtMsSeen == null || focusLostAtMs > lastFocusLostAtMsSeen!!
+            if (isNewEvent && !joinedAfterEvent) {
+                lastFocusLostAtMsSeen = focusLostAtMs
+                return "Có người đã mất tập trung"
+            }
+        }
+
+        val roomStartedStatus = "started"
+        val roomWaitingStatus = "waiting"
+
+        return when {
+            status == roomStartedStatus -> null
+            previousStatus == roomStartedStatus && status == roomWaitingStatus -> _uiState.value.focusLostMessage
+            else -> _uiState.value.focusLostMessage
         }
     }
 

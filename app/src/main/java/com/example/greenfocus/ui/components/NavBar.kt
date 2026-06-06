@@ -18,12 +18,12 @@ import com.example.greenfocus.R
 data class NavItem(val route: String, val label: String, val iconRes: Int)
 
 val navItems = listOf(
-    NavItem(route = "home",    label = "Home",    iconRes = R.drawable.home),
-    NavItem(route = "forest",  label = "Forest",  iconRes = R.drawable.forest),
-    NavItem(route = "stats",   label = "Stats",   iconRes = R.drawable.stats),
-    NavItem(route = "store",   label = "Store",   iconRes = R.drawable.store),
-    NavItem(route = "social",  label = "Social",  iconRes = R.drawable.social),
-    NavItem(route = "profile", label = "Profile", iconRes = R.drawable.profile),
+    NavItem(route = "home",    label = "Trang chủ",    iconRes = R.drawable.home),
+    NavItem(route = "forest",  label = "Khu rừng",  iconRes = R.drawable.forest),
+    NavItem(route = "stats",   label = "Thống kê",   iconRes = R.drawable.stats),
+    NavItem(route = "store",   label = "Cửa hàng",   iconRes = R.drawable.store),
+    NavItem(route = "social",  label = "Cộng đồng",  iconRes = R.drawable.social),
+    NavItem(route = "profile", label = "Cá nhân", iconRes = R.drawable.profile),
 )
 
 @Composable
@@ -44,20 +44,23 @@ fun BottomNavBar(currentRoute: String, onNavigate: (String) -> Unit) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
+                    .weight(1f)
                     .clickable { onNavigate(item.route) }
-                    .padding(horizontal = 6.dp, vertical = 6.dp)
+                    .padding(vertical = 6.dp)
             ) {
                 Icon(
                     painter = painterResource(id = item.iconRes),
                     contentDescription = item.label,
                     tint = contentColor,
-                    modifier = Modifier.size(if (isSelected) 28.dp else 24.dp)
+                    modifier = Modifier.size(if (isSelected) 24.dp else 20.dp)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = item.label,
                     color = contentColor,
-                    fontSize = 11.sp
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
         }

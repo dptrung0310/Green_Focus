@@ -37,7 +37,7 @@ private fun SessionsCard(count: Int, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.Bold,
                 color      = TextDark
             )
-            Text(text = "Sessions", fontSize = 12.sp, color = TextMuted)
+            Text(text = "Phiên tập trung", fontSize = 12.sp, color = TextMuted)
         }
     }
 }
@@ -71,7 +71,7 @@ private fun CompletionCard(rate: Float, modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.Bold,
                 color      = TextDark
             )
-            Text(text = "Success Rate", fontSize = 12.sp, color = TextMuted)
+            Text(text = "Tỷ lệ thành công", fontSize = 12.sp, color = TextMuted)
         }
     }
 }

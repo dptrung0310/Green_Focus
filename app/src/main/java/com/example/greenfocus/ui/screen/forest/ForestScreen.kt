@@ -49,7 +49,7 @@ fun ForestScreen(
     ) {
         // --- Header (Camera button removed) ---
         Text(
-            text = "My Forest",
+            text = "Khu rừng của tôi",
             style = MaterialTheme.typography.headlineMedium,
             color = Color(0xFF266E46), // Dark Green
             fontWeight = FontWeight.SemiBold
@@ -96,13 +96,13 @@ fun ArBanner(onClick: () -> Unit) {
     ) {
         Column {
             Text(
-                text = "View in AR",
+                text = "Xem chế độ AR",
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )
             Text(
-                text = "See your forest in 3D",
+                text = "Ngắm khu rừng dưới dạng 3D",
                 color = Color(0xCCFFFFFF),
                 fontSize = 14.sp
             )

@@ -30,7 +30,7 @@ fun StreakCard(days: Int, modifier: Modifier = Modifier) {
     ) {
         Column {
             Text(
-                text       = "Current Streak",
+                text       = "Chuỗi ngày hiện tại",
                 color      = StreakTextMedium,
                 fontSize   = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -38,7 +38,7 @@ fun StreakCard(days: Int, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
                 Text(
-                    text       = "$days days",
+                    text       = "$days ngày",
                     color      = StreakTextDark,
                     fontSize   = 32.sp,
                     fontWeight = FontWeight.Bold
@@ -48,7 +48,7 @@ fun StreakCard(days: Int, modifier: Modifier = Modifier) {
             }
             Spacer(Modifier.height(2.dp))
             Text(
-                text     = if (days > 0) "Keep it up!" else "Start your streak today!",
+                text     = if (days > 0) "Hãy tiếp tục phát huy!" else "Bắt đầu chuỗi ngày của bạn ngay hôm nay!",
                 color    = StreakTextMedium.copy(alpha = 0.8f),
                 fontSize = 12.sp
             )

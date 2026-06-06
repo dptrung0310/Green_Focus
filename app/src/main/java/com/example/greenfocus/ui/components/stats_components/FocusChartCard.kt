@@ -34,7 +34,7 @@ import com.patrykandpatrick.vico.core.entry.entryModelOf
 
 //  ChartMode
 enum class ChartMode(val label: String) {
-    WEEK("Week"), MONTH("Month"), YEAR("Year")
+    WEEK("Tuần"), MONTH("Tháng"), YEAR("Năm")
 }
 
 //  FocusChartCard
@@ -63,9 +63,9 @@ fun FocusChartCard(
             ) {
                 Text(
                     text       = when (selectedMode) {
-                        ChartMode.WEEK  -> "This Week"
-                        ChartMode.MONTH -> "This Month"
-                        ChartMode.YEAR  -> "This Year"
+                        ChartMode.WEEK  -> "Tuần này"
+                        ChartMode.MONTH -> "Tháng này"
+                        ChartMode.YEAR  -> "Năm nay"
                     },
                     fontSize   = 16.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -100,18 +100,18 @@ fun FocusChartCard(
                 ChartMode.WEEK  -> VicoBarChart(
                     entries    = weeklyData.map { it.minutes.toFloat() },
                     labels     = weeklyData.map { it.label },
-                    yAxisLabel = "min"
+                    yAxisLabel = "phút"
                 )
                 ChartMode.MONTH -> VicoBarChart(
                     entries    = monthlyData.map { it.minutes.toFloat() / 60f },
                     labels     = monthlyData.map { it.label },
-                    yAxisLabel = "h",
+                    yAxisLabel = "giờ",
                     labelEvery = 5
                 )
                 ChartMode.YEAR  -> VicoBarChart(
                     entries    = yearlyData.map { it.hours },
                     labels     = yearlyData.map { it.label },
-                    yAxisLabel = "h"
+                    yAxisLabel = "giờ"
                 )
             }
         }

@@ -62,7 +62,7 @@ fun TeamRoomScreen(
     roomId: String,
     onBack: () -> Unit,
     pomodoroViewModel: PomodoroViewModel = viewModel(factory = PomodoroViewModel.Factory),
-    teamRoomViewModel: TeamRoomViewModel = viewModel(),
+    teamRoomViewModel: TeamRoomViewModel = viewModel(factory = TeamRoomViewModel.Factory),
     socialViewModel: SocialViewModel = viewModel()
 ) {
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
@@ -76,6 +76,32 @@ fun TeamRoomScreen(
 
     LaunchedEffect(roomId) {
         teamRoomViewModel.bindRoom(roomId)
+    }
+
+    val room = teamRoomUiState.room
+
+    // Sync room started status to start local countdown and foreground service
+    LaunchedEffect(room?.status, room?.startedAt) {
+        if (room != null && room.status == ROOM_STATUS_STARTED && room.startedAt != null) {
+            val startedAtMs = room.startedAt.toDate().time
+            val elapsed = (System.currentTimeMillis() - startedAtMs).coerceAtLeast(0L)
+            val remainingSeconds = (((room.durationMs - elapsed) / 1000L).toInt())
+                .coerceIn(0, (room.durationMs / 1000L).toInt())
+            
+            if (remainingSeconds > 0 && !pomodoroUiState.isTimerRunning) {
+                // 1. Configure remaining time in seconds
+                pomodoroViewModel.setTimerSeconds(remainingSeconds)
+                // 2. Select host's tree
+                val resolvedTree = resolveRoomTree(room.treeId, pomodoroUiState.unlockedTrees)
+                pomodoroViewModel.updateSelectedTree(resolvedTree)
+                // 3. Start foreground service
+                pomodoroViewModel.startTimerService(context)
+            }
+        } else if (room != null && room.status == ROOM_STATUS_WAITING) {
+            if (pomodoroUiState.isTimerRunning) {
+                pomodoroViewModel.stopTimerService(context)
+            }
+        }
     }
 
     DisposableEffect(context.applicationContext) {
@@ -108,17 +134,13 @@ fun TeamRoomScreen(
     }
 
     val timerScale by animateFloatAsState(
-        targetValue = if (teamRoomUiState.isRunning) 1.25f else 1.0f,
+        targetValue = if (pomodoroUiState.isTimerRunning) 1.25f else 1.0f,
         animationSpec = tween(durationMillis = 600),
         label = "timerScale"
     )
 
-    val formattedTime = formatDuration(teamRoomUiState.remainingMs)
-    val progress = if (teamRoomUiState.durationMs > 0) {
-        teamRoomUiState.remainingMs.toFloat() / teamRoomUiState.durationMs.toFloat()
-    } else {
-        1f
-    }
+    val formattedTime = pomodoroUiState.formattedTime
+    val progress = pomodoroUiState.currentPercentage
     val rewardCoins = (teamRoomUiState.durationMs / 60000L).toInt()
     val isWaiting = teamRoomUiState.room?.status == ROOM_STATUS_WAITING
     val roomTreeId = teamRoomUiState.room?.treeId?.ifBlank { null } ?: pomodoroUiState.selectedTree.id
@@ -137,6 +159,22 @@ fun TeamRoomScreen(
         }
     }
 
+    LaunchedEffect(pomodoroUiState.isTimerFinished, teamRoomUiState.isHost, room?.status) {
+        if (pomodoroUiState.isTimerFinished && room?.status == ROOM_STATUS_STARTED) {
+            if (teamRoomUiState.isHost) {
+                teamRoomViewModel.stopRoom()
+            }
+            pomodoroViewModel.resetAfterSession((room.durationMs / 60000L).toInt())
+        }
+    }
+
+    LaunchedEffect(pomodoroUiState.isTimerFailed, room?.status) {
+        if (pomodoroUiState.isTimerFailed && room?.status == ROOM_STATUS_STARTED) {
+            teamRoomViewModel.reportFocusLost()
+            pomodoroViewModel.resetAfterSession((room.durationMs / 60000L).toInt())
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -152,29 +190,26 @@ fun TeamRoomScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
         // 1. Header Row: Back Button and Invite Button
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {
-                teamRoomViewModel.leaveRoom()
-                onBack()
-            }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color(0xFF2E7D32)
-                )
-            }
-
-            AnimatedVisibility(
-                visible = !teamRoomUiState.isRunning,
-                enter = fadeIn(),
-                exit = fadeOut()
+        if (!pomodoroUiState.isTimerRunning) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(onClick = {
+                    teamRoomViewModel.leaveRoom()
+                    pomodoroViewModel.resetToDefault()
+                    onBack()
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color(0xFF2E7D32)
+                    )
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -197,14 +232,14 @@ fun TeamRoomScreen(
                         )
                     }
                 }
-            }
 
-            IconButton(onClick = { showInviteDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.PersonAdd,
-                    contentDescription = "Invite Friend",
-                    tint = Color(0xFF2E7D32)
-                )
+                IconButton(onClick = { showInviteDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = "Invite Friend",
+                        tint = Color(0xFF2E7D32)
+                    )
+                }
             }
         }
 
@@ -218,7 +253,9 @@ fun TeamRoomScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        TeamMembersRow(members = teamRoomUiState.members)
+        if (!pomodoroUiState.isTimerRunning) {
+            TeamMembersRow(members = teamRoomUiState.members)
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -228,11 +265,11 @@ fun TeamRoomScreen(
             currentTree = activeTree.imageStaticSeed,
             currentTreeName = stringResource(id = activeTree.name),
             currentProgress = progress,
-            isHalfDone = teamRoomUiState.isHalfDone,
+            isHalfDone = pomodoroUiState.isHalfDone,
             seedImage = activeTree.imageStaticSeed,
             bigImage = activeTree.imageStaticBig,
             onTimerClick = {},
-            isTimerRunning = teamRoomUiState.isRunning,
+            isTimerRunning = pomodoroUiState.isTimerRunning,
             modifier = Modifier.scale(timerScale)
         )
 
@@ -240,7 +277,7 @@ fun TeamRoomScreen(
 
         // 3. Reward Info Card
         AnimatedVisibility(
-            visible = !teamRoomUiState.isRunning,
+            visible = !pomodoroUiState.isTimerRunning,
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
@@ -271,7 +308,7 @@ fun TeamRoomScreen(
         // 4. Deep Focus Mode Toggle Block
         if (teamRoomUiState.isHost) {
             AnimatedVisibility(
-                visible = !teamRoomUiState.isRunning,
+                visible = !pomodoroUiState.isTimerRunning,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
@@ -285,7 +322,7 @@ fun TeamRoomScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                             .toggleable(
                                 value = pomodoroUiState.isDeepFocusEnabled,
-                                enabled = !teamRoomUiState.isRunning,
+                                enabled = !pomodoroUiState.isTimerRunning,
                                 onValueChange = {
                                     val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
                                     val mode = appOps.checkOpNoThrow(
@@ -336,14 +373,14 @@ fun TeamRoomScreen(
         // 5. Tree Selection Row
         if (teamRoomUiState.isHost) {
             AnimatedVisibility(
-                visible = !teamRoomUiState.isRunning,
+                visible = !pomodoroUiState.isTimerRunning,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(16.dp))
                     TreeSelectionRow(
-                        isTimerRunning = teamRoomUiState.isRunning,
+                        isTimerRunning = pomodoroUiState.isTimerRunning,
                         selectedTree = activeTree,
                         unlockedTrees = pomodoroUiState.unlockedTrees,
                         changeSelectedTree = {
@@ -357,10 +394,8 @@ fun TeamRoomScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        
-
-        // 7. Start / Waiting State
-        if (!teamRoomUiState.isRunning) {
+        // 7. Start / Waiting State vs Stop button
+        if (!pomodoroUiState.isTimerRunning) {
             if (teamRoomUiState.isHost && isWaiting) {
                 Button(
                     onClick = { teamRoomViewModel.startRoom() },
@@ -386,7 +421,7 @@ fun TeamRoomScreen(
             }
         } else {
             TextButton(
-                onClick = { teamRoomViewModel.stopRoom() },
+                onClick = { teamRoomViewModel.reportFocusLost() },
                 colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFD32F2F)),
                 modifier = Modifier
                     .fillMaxWidth()

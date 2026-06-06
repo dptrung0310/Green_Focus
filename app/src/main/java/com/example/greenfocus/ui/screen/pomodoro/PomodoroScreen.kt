@@ -48,6 +48,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,6 +59,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Badge
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -82,6 +87,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import coil.compose.AsyncImage
 import com.example.greenfocus.data.model.User
 import com.example.greenfocus.ui.screen.social.JoinRoomDialog
+import com.example.greenfocus.ui.screen.social.FriendRequestsDialog
 import com.example.greenfocus.ui.screen.social.ROOM_STATUS_STARTED
 import com.example.greenfocus.ui.screen.social.ROOM_STATUS_WAITING
 import com.example.greenfocus.ui.screen.social.SocialUiState
@@ -99,11 +105,18 @@ fun PomodoroScreen(
 ) {
     val roomState by homeRoomViewModel.uiState.collectAsState()
 
+    LaunchedEffect(roomState.activeRoomId) {
+        if (roomState.activeRoomId == null) {
+            pomodoroViewModel.resetToDefault()
+        }
+    }
+
     if (roomState.activeRoomId == null) {
         HomeLandingContent(
             modifier = modifier,
             pomodoroViewModel = pomodoroViewModel,
-            homeRoomViewModel = homeRoomViewModel
+            homeRoomViewModel = homeRoomViewModel,
+            socialViewModel = socialViewModel
         )
     } else {
         HomeRoomContent(
@@ -120,9 +133,12 @@ fun PomodoroScreen(
 private fun HomeLandingContent(
     modifier: Modifier = Modifier,
     pomodoroViewModel: PomodoroViewModel,
-    homeRoomViewModel: HomeRoomViewModel
+    homeRoomViewModel: HomeRoomViewModel,
+    socialViewModel: SocialViewModel
 ) {
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
+    val socialUiState by socialViewModel.uiState.collectAsState()
+    val invites by socialViewModel.inviteList.collectAsState()
     val scope = rememberCoroutineScope()
 
     var createError by remember { mutableStateOf("") }
@@ -130,11 +146,17 @@ private fun HomeLandingContent(
     var showJoinDialog by remember { mutableStateOf(false) }
     var isJoining by remember { mutableStateOf(false) }
     var joinError by remember { mutableStateOf("") }
+    var showRequestsDialog by remember { mutableStateOf(false) }
+    var inviteErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    val requests = (socialUiState as? SocialUiState.Success)?.friendRequests ?: emptyList()
+    val totalInvites = requests.size + invites.size
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFFAF7EC))
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -143,26 +165,154 @@ private fun HomeLandingContent(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(Brush.linearGradient(listOf(Color(0xFFFFD54F), Color(0xFFFFA726)))),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("😊", fontSize = 22.sp)
+                }
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = stringResource(R.string.home_hello),
-                    style = MaterialTheme.typography.headlineSmall,
+                    text = "Xin chào ${pomodoroUiState.currentUserName}!",
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF2E7D32),
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = pomodoroUiState.currentUserName,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = Color(0xFF2E7D32),
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
-            CoinContainer(coins = pomodoroUiState.userMoneyAmount)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                IconButton(
+                    onClick = { showRequestsDialog = true },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    BadgedBox(
+                        badge = {
+                            if (totalInvites > 0) {
+                                Badge(
+                                    containerColor = Color.Red,
+                                    modifier = Modifier.offset(x = (-2).dp, y = 2.dp)
+                                ) {
+                                    Text(totalInvites.toString(), color = Color.White, fontSize = 9.sp)
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Lời mời kết bạn",
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+                CoinContainer(coins = pomodoroUiState.userMoneyAmount)
+            }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Widget thống kê nhanh hôm nay
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .shadow(2.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFE8F5E9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("⏱️", fontSize = 16.sp)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Hôm nay",
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "${pomodoroUiState.todayFocusMinutes}p",
+                            fontSize = 15.sp,
+                            color = Color(0xFF2E7D32),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .shadow(2.dp, RoundedCornerShape(12.dp)),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFE8F5E9)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("🌳", fontSize = 16.sp)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = "Cây hôm nay",
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            text = "${pomodoroUiState.todayTreesPlanted} cây",
+                            fontSize = 15.sp,
+                            color = Color(0xFF2E7D32),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         TimerBlock(
             currentTime = "",
@@ -177,11 +327,11 @@ private fun HomeLandingContent(
             showTime = false
         )
 
-        Spacer(modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.height(32.dp))
 
         TeamActionButton(
-            title = "Create Room",
-            subtitle = "Bắt đầu phiên tập trung nhóm",
+            title = "Bắt đầu phiên tập trung của bạn",
+            subtitle = "",
             onClick = {
                 if (isCreating) return@TeamActionButton
                 createError = ""
@@ -202,11 +352,22 @@ private fun HomeLandingContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        TeamActionButton(
-            title = "Join Room",
-            subtitle = "Nhập mã phòng",
-            onClick = { showJoinDialog = true }
-        )
+        OutlinedButton(
+            onClick = { showJoinDialog = true },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            border = BorderStroke(1.5.dp, Color(0xFF2E7D32)),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color(0xFF2E7D32)
+            ),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            Text(
+                text = "Tham gia phòng",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         if (createError.isNotEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -236,6 +397,34 @@ private fun HomeLandingContent(
             },
             isJoining = isJoining,
             externalErrorMessage = joinError
+        )
+    }
+    if (showRequestsDialog && socialUiState is SocialUiState.Success) {
+        FriendRequestsDialog(
+            friendRequests = requests,
+            roomInvites = invites,
+            inviteErrorMessage = inviteErrorMessage,
+            onAcceptFriend = { socialViewModel.acceptRequest(it) },
+            onDeclineFriend = { socialViewModel.declineRequest(it) },
+            onJoinRoomInvite = { invite ->
+                inviteErrorMessage = null
+                scope.launch {
+                    val result = homeRoomViewModel.joinRoom(invite.roomId)
+                    if (result.isSuccess) {
+                        socialViewModel.deleteInvite(invite)
+                        showRequestsDialog = false
+                    } else {
+                        inviteErrorMessage = result.exceptionOrNull()?.message ?: "Không thể vào phòng"
+                    }
+                }
+            },
+            onDismissInvite = { invite ->
+                socialViewModel.deleteInvite(invite)
+            },
+            onDismiss = {
+                inviteErrorMessage = null
+                showRequestsDialog = false
+            }
         )
     }
 }
@@ -354,9 +543,34 @@ private fun HomeRoomContent(
         }
     }
 
-    LaunchedEffect(isStarted) {
-        if (!isStarted && pomodoroUiState.isTimerRunning) {
-            pomodoroViewModel.stopTimerService(context)
+    LaunchedEffect(room?.status, room?.startedAt) {
+        if (room != null && room.status == ROOM_STATUS_STARTED && room.startedAt != null) {
+            val startedAtMs = room.startedAt.toDate().time
+            val elapsed = (System.currentTimeMillis() - startedAtMs).coerceAtLeast(0L)
+            val remainingSeconds = (((room.durationMs - elapsed) / 1000L).toInt())
+                .coerceIn(0, (room.durationMs / 1000L).toInt())
+            
+            if (remainingSeconds > 0 && !pomodoroUiState.isTimerRunning) {
+                // 1. Configure remaining time in seconds
+                pomodoroViewModel.setTimerSeconds(remainingSeconds)
+                // 2. Select host's tree
+                val resolvedTree = resolveRoomTree(room.treeId, pomodoroUiState.unlockedTrees)
+                pomodoroViewModel.updateSelectedTree(resolvedTree)
+                // 3. Start foreground service
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                        pomodoroViewModel.startTimerService(context)
+                    } else {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                } else {
+                    pomodoroViewModel.startTimerService(context)
+                }
+            }
+        } else if (room != null && room.status == ROOM_STATUS_WAITING) {
+            if (pomodoroUiState.isTimerRunning) {
+                pomodoroViewModel.stopTimerService(context)
+            }
         }
     }
 
@@ -375,279 +589,293 @@ private fun HomeRoomContent(
         }
     }
 
-    LaunchedEffect(pomodoroUiState.isTimerFailed, roomState.isHost, isStarted) {
-        if (pomodoroUiState.isTimerFailed) {
-            if (roomState.isHost && isStarted) {
-                homeRoomViewModel.stopRoom()
-            }
+    LaunchedEffect(pomodoroUiState.isTimerFailed, isStarted) {
+        if (pomodoroUiState.isTimerFailed && isStarted) {
+            homeRoomViewModel.reportFocusLost()
             pomodoroViewModel.resetAfterSession(durationMinutes)
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFFFAF7EC))
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
+    if (pomodoroUiState.isTimerRunning) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxSize()
+                .background(Color(0xFFFAF7EC))
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            IconButton(onClick = {
-                pomodoroViewModel.stopTimerService(context)
-                homeRoomViewModel.leaveRoom()
-            }) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color(0xFF2E7D32)
-                )
-            }
+            TeamMembersRow(members = roomState.members)
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(Color(0xFFF1F8E9))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = "ID Room: ${roomState.activeRoomId.orEmpty()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF2E7D32)
-                )
+            Spacer(modifier = Modifier.height(48.dp))
 
-                Spacer(modifier = Modifier.width(4.dp))
+            TimerBlock(
+                currentTime = pomodoroUiState.formattedTime,
+                currentTree = activeTree.imageStaticSeed,
+                currentTreeName = stringResource(id = activeTree.name),
+                currentProgress = pomodoroUiState.currentPercentage,
+                isHalfDone = pomodoroUiState.isHalfDone,
+                seedImage = activeTree.imageStaticSeed,
+                bigImage = activeTree.imageStaticBig,
+                onTimerClick = {},
+                isTimerRunning = pomodoroUiState.isTimerRunning,
+                modifier = Modifier.scale(timerScale)
+            )
 
-                IconButton(
-                    onClick = {
-                        roomState.activeRoomId?.let { id ->
-                            clipboardManager.setText(AnnotatedString(id))
-                        }
-                    },
-                    modifier = Modifier.size(28.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy ID",
-                        tint = Color(0xFF2E7D32),
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(48.dp))
 
-            IconButton(onClick = { showInviteDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.PersonAdd,
-                    contentDescription = "Invite Friend",
-                    tint = Color(0xFF2E7D32)
-                )
-            }
-        }
-
-        TeamMembersRow(members = roomState.members)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        TimerBlock(
-            currentTime = pomodoroUiState.formattedTime,
-            currentTree = activeTree.imageStaticSeed,
-            currentTreeName = stringResource(id = activeTree.name),
-            currentProgress = pomodoroUiState.currentPercentage,
-            isHalfDone = pomodoroUiState.isHalfDone,
-            seedImage = activeTree.imageStaticSeed,
-            bigImage = activeTree.imageStaticBig,
-            onTimerClick = {
-                if (roomState.isHost && isWaiting) {
-                    pomodoroViewModel.toggleTimeDialog()
-                }
-            },
-            isTimerRunning = pomodoroUiState.isTimerRunning,
-            modifier = Modifier.scale(timerScale)
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        AnimatedVisibility(
-            visible = !pomodoroUiState.isTimerRunning,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically()
-        ) {
-            Row(
+            TextButton(
+                onClick = {
+                    pomodoroViewModel.stopTimerService(context)
+                    homeRoomViewModel.reportFocusLost()
+                },
+                colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFD32F2F)),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .height(50.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = "Reward Icon",
-                    tint = Color(0xFFFBC02D),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = stringResource(R.string.home_reward_format, rewardCoins),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color.Black,
+                    text = stringResource(R.string.pomodoro_stop_button),
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
+    } else {
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color(0xFFFAF7EC))
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = {
+                    pomodoroViewModel.stopTimerService(context)
+                    homeRoomViewModel.leaveRoom()
+                }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Quay lại",
+                        tint = Color(0xFF2E7D32)
+                    )
+                }
 
-        if (roomState.isHost) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFF1F8E9))
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "Mã phòng: ${roomState.activeRoomId.orEmpty()}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF2E7D32),
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    IconButton(
+                        onClick = {
+                            roomState.activeRoomId?.let { id ->
+                                clipboardManager.setText(AnnotatedString(id))
+                            }
+                        },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Sao chép mã phòng",
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                IconButton(onClick = { showInviteDialog = true }) {
+                    Icon(
+                        imageVector = Icons.Default.PersonAdd,
+                        contentDescription = "Mời bạn bè",
+                        tint = Color(0xFF2E7D32)
+                    )
+                }
+            }
+
+            TeamMembersRow(members = roomState.members)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TimerBlock(
+                currentTime = pomodoroUiState.formattedTime,
+                currentTree = activeTree.imageStaticSeed,
+                currentTreeName = stringResource(id = activeTree.name),
+                currentProgress = pomodoroUiState.currentPercentage,
+                isHalfDone = pomodoroUiState.isHalfDone,
+                seedImage = activeTree.imageStaticSeed,
+                bigImage = activeTree.imageStaticBig,
+                onTimerClick = {
+                    if (roomState.isHost && isWaiting) {
+                        pomodoroViewModel.toggleTimeDialog()
+                    }
+                },
+                isTimerRunning = pomodoroUiState.isTimerRunning,
+                modifier = Modifier.scale(timerScale)
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             AnimatedVisibility(
                 visible = !pomodoroUiState.isTimerRunning,
                 enter = fadeIn() + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
             ) {
-                Column {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp))
-                            .background(Color.White)
-                            .padding(horizontal = 16.dp, vertical = 12.dp)
-                            .toggleable(
-                                value = pomodoroUiState.isDeepFocusEnabled,
-                                enabled = !pomodoroUiState.isTimerRunning,
-                                onValueChange = {
-                                    val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-                                    val mode = appOps.checkOpNoThrow(
-                                        AppOpsManager.OPSTR_GET_USAGE_STATS,
-                                        Process.myUid(),
-                                        context.packageName
-                                    )
-                                    if (mode == AppOpsManager.MODE_ALLOWED) {
-                                        pomodoroViewModel.toggleDeepFocus()
-                                    } else {
-                                        pomodoroViewModel.toggleUsageStatsRationaleDialog()
-                                    }
-                                },
-                                role = Role.Switch
-                            ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Lock Icon",
-                            tint = Color(0xFF388E3C),
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Text(
-                            text = stringResource(R.string.pomodoro_deep_mode_button),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color.Black,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Switch(
-                            checked = pomodoroUiState.isDeepFocusEnabled,
-                            onCheckedChange = null,
-                            modifier = Modifier.scale(0.8f),
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color(0xFF388E3C),
-                                checkedTrackColor = Color(0xFFC8E6C9),
-                                uncheckedThumbColor = Color.Gray,
-                                uncheckedTrackColor = Color(0xFFE0E0E0)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp))
+                        .background(Color.White)
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = "Icon phần thưởng",
+                        tint = Color(0xFFFBC02D),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = stringResource(R.string.home_reward_format, rewardCoins),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (roomState.isHost) {
+                AnimatedVisibility(
+                    visible = !pomodoroUiState.isTimerRunning,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                                .toggleable(
+                                    value = pomodoroUiState.isDeepFocusEnabled,
+                                    enabled = !pomodoroUiState.isTimerRunning,
+                                    onValueChange = {
+                                        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+                                        val mode = appOps.checkOpNoThrow(
+                                            AppOpsManager.OPSTR_GET_USAGE_STATS,
+                                            Process.myUid(),
+                                            context.packageName
+                                        )
+                                        if (mode == AppOpsManager.MODE_ALLOWED) {
+                                            pomodoroViewModel.toggleDeepFocus()
+                                        } else {
+                                            pomodoroViewModel.toggleUsageStatsRationaleDialog()
+                                        }
+                                    },
+                                    role = Role.Switch
+                                ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Icon khóa",
+                                tint = Color(0xFF388E3C),
+                                modifier = Modifier.size(20.dp)
                             )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.pomodoro_deep_mode_button),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color.Black,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Switch(
+                                checked = pomodoroUiState.isDeepFocusEnabled,
+                                onCheckedChange = null,
+                                modifier = Modifier.scale(0.8f),
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color(0xFF388E3C),
+                                    checkedTrackColor = Color(0xFFC8E6C9),
+                                    uncheckedThumbColor = Color.Gray,
+                                    uncheckedTrackColor = Color(0xFFE0E0E0)
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (roomState.isHost && isWaiting) {
+                AnimatedVisibility(
+                    visible = !pomodoroUiState.isTimerRunning,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        TreeSelectionRow(
+                            isTimerRunning = pomodoroUiState.isTimerRunning,
+                            selectedTree = activeTree,
+                            unlockedTrees = pomodoroUiState.unlockedTrees,
+                            changeSelectedTree = {
+                                pomodoroViewModel.updateSelectedTree(it)
+                                homeRoomViewModel.updateRoomTree(it.id)
+                            }
                         )
                     }
                 }
             }
-        }
 
-        if (roomState.isHost && isWaiting) {
-            AnimatedVisibility(
-                visible = !pomodoroUiState.isTimerRunning,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically()
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TreeSelectionRow(
-                        isTimerRunning = pomodoroUiState.isTimerRunning,
-                        selectedTree = activeTree,
-                        unlockedTrees = pomodoroUiState.unlockedTrees,
-                        changeSelectedTree = {
-                            pomodoroViewModel.updateSelectedTree(it)
-                            homeRoomViewModel.updateRoomTree(it.id)
-                        }
-                    )
-                }
-            }
-        }
+            Spacer(modifier = Modifier.height(24.dp))
 
-        when {
-            isWaiting && roomState.isHost -> {
-                Button(
-                    onClick = {
-                        homeRoomViewModel.startRoom(durationMs)
-                        startLocalTimer()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.pomodoro_start_button),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+            when {
+                isWaiting && roomState.isHost -> {
+                    Button(
+                        onClick = {
+                            homeRoomViewModel.startRoom(durationMs)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.pomodoro_start_button),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-            }
-            isWaiting -> {
-                Text(
-                    text = stringResource(R.string.home_waiting_host),
-                    fontSize = 14.sp,
-                    color = Color.Gray,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-            isStarted && !pomodoroUiState.isTimerRunning -> {
-                Button(
-                    onClick = { startLocalTimer() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)),
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                ) {
+                isWaiting -> {
                     Text(
-                        text = stringResource(R.string.pomodoro_start_button),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            isStarted && pomodoroUiState.isTimerRunning && roomState.isHost -> {
-                TextButton(
-                    onClick = {
-                        pomodoroViewModel.stopTimerService(context)
-                        homeRoomViewModel.stopRoom()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFD32F2F)),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.pomodoro_stop_button),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = stringResource(R.string.home_waiting_host),
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -692,6 +920,13 @@ private fun HomeRoomContent(
         UsageStatsRationaleDialog(
             onDismiss = { pomodoroViewModel.toggleUsageStatsRationaleDialog() },
             context = context
+        )
+    }
+
+    if (!roomState.focusLostMessage.isNullOrBlank()) {
+        FocusLostDialog(
+            message = roomState.focusLostMessage ?: "",
+            onDismiss = { homeRoomViewModel.clearFocusLostMessage() }
         )
     }
 
@@ -763,14 +998,14 @@ private fun InviteFriendDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Invite Friend", fontWeight = FontWeight.Bold) },
+        title = { Text("Mời bạn bè", fontWeight = FontWeight.Bold) },
         text = {
             if (friends.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxWidth().height(100.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("No friends to invite", color = Color.Gray)
+                    Text("Không có bạn bè để mời", color = Color.Gray)
                 }
             } else {
                 LazyRow(
@@ -815,7 +1050,7 @@ private fun InviteFriendDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = Color(0xFF2E7D32))
+                Text("Đóng", color = Color(0xFF2E7D32))
             }
         }
     )
@@ -1113,6 +1348,37 @@ fun UsageStatsRationaleDialog(
         },
         dismissButton = {
             TextButton(onClick = { onDismiss() }) { Text(stringResource(R.string.dialog_dismiss)) }
+        }
+    )
+}
+
+@Composable
+private fun FocusLostDialog(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFFEBEE)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F)
+                )
+            }
+        },
+        title = { Text("Có người đã mất tập trung", fontWeight = FontWeight.Bold, fontSize = 18.sp) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Tiếp tục", color = Color(0xFF2E7D32))
+            }
         }
     )
 }

@@ -25,16 +25,16 @@
     <string name="tree_sakura">Hoa Anh Đào</string>
 
     <!-- Store Screen -->
-    <string name="store_title">Seed Shop</string>
-    <string name="store_subtitle">Unlock new trees</string>
-    <string name="store_confirm_title">Confirm Purchase?</string>
-    <string name="store_confirm_message">Buy %1$s for %2$d coins?</string>
-    <string name="store_balance">Your balance: %1$d coins</string>
-    <string name="store_btn_buy">Buy</string>
-    <string name="store_insufficient_title">Not Enough Coins</string>
-    <string name="store_insufficient_message">Complete more focus sessions to earn more coins</string>
-    <string name="store_banner_title">Earn More Coins</string>
-    <string name="store_banner_subtitle">Complete sessions to earn rewards</string>
-    <string name="store_status_owned">Owned ✓</string>
-    <string name="store_status_locked">Locked</string>
+    <string name="store_title">Cửa hàng hạt giống</string>
+    <string name="store_subtitle">Mở khóa các cây mới</string>
+    <string name="store_confirm_title">Xác nhận mua?</string>
+    <string name="store_confirm_message">Mua %1$s với giá %2$d xu?</string>
+    <string name="store_balance">Số dư của bạn: %1$d xu</string>
+    <string name="store_btn_buy">Mua</string>
+    <string name="store_insufficient_title">Không đủ xu</string>
+    <string name="store_insufficient_message">Hoàn thành thêm các phiên tập trung để kiếm thêm xu</string>
+    <string name="store_banner_title">Kiếm thêm xu</string>
+    <string name="store_banner_subtitle">Hoàn thành phiên để nhận phần thưởng</string>
+    <string name="store_status_owned">Đã sở hữu ✓</string>
+    <string name="store_status_locked">Chưa mở khóa</string>
 </resources>

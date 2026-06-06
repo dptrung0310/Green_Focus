@@ -2,6 +2,7 @@ package com.example.greenfocus.data.repository
 
 import com.example.greenfocus.data.model.FriendRequest
 import com.example.greenfocus.data.model.User
+import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.util.FirestoreCollections
 import com.google.firebase.firestore.FieldValue
@@ -33,6 +34,8 @@ interface UserRepository {
     suspend fun acceptFriendRequest(request: FriendRequest): Boolean
     suspend fun declineFriendRequest(requestId: String): Boolean
     suspend fun isFriendRequestSent(fromUid: String, toUid: String): Boolean
+    suspend fun updateFocusStats(coinsIncrement: Int, durationSeconds: Long, treesPlantedIncrement: Int, xpIncrement: Int): Boolean
+    suspend fun syncUserStatsWithSessions(): Boolean
 }
 
 class ProdUserRepository : UserRepository {
@@ -154,6 +157,75 @@ class ProdUserRepository : UserRepository {
         return try {
             usersCollection.document(uid).update("coins", FieldValue.increment(amount.toLong())).await()
             true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    override suspend fun updateFocusStats(
+        coinsIncrement: Int,
+        durationSeconds: Long,
+        treesPlantedIncrement: Int,
+        xpIncrement: Int
+    ): Boolean {
+        val uid = FirebaseModule.auth.currentUser?.uid ?: return false
+        return try {
+            val userRef = usersCollection.document(uid)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(userRef)
+                val user = snapshot.toObject(User::class.java) ?: return@runTransaction false
+                
+                var newXp = user.experience + xpIncrement
+                var newLevel = user.level
+                var xpNeeded = newLevel * 500
+                while (xpNeeded > 0 && newXp >= xpNeeded) {
+                    newXp -= xpNeeded
+                    newLevel++
+                    xpNeeded = newLevel * 500
+                }
+                
+                val updates = mapOf(
+                    "coins" to user.coins + coinsIncrement,
+                    "totalFocusTime" to user.totalFocusTime + durationSeconds,
+                    "totalTreesPlanted" to user.totalTreesPlanted + treesPlantedIncrement,
+                    "experience" to newXp,
+                    "level" to newLevel
+                )
+                transaction.update(userRef, updates)
+                true
+            }.await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    override suspend fun syncUserStatsWithSessions(): Boolean {
+        val uid = FirebaseModule.auth.currentUser?.uid ?: return false
+        return try {
+            val sessionsSnapshot = db.collection(FirestoreCollections.SESSIONS)
+                .document(uid).collection("user_sessions")
+                .get().await()
+            
+            val sessions = sessionsSnapshot.toObjects(FocusSession::class.java)
+            val aliveCount = sessions.count { it.status == "ALIVE" }
+            val totalFocusTimeSeconds = sessions.filter { it.status == "ALIVE" }
+                .sumOf { it.durationMinutes * 60L }
+            
+            val userRef = usersCollection.document(uid)
+            db.runTransaction { transaction ->
+                val snapshot = transaction.get(userRef)
+                val user = snapshot.toObject(User::class.java) ?: return@runTransaction false
+                
+                if (user.totalTreesPlanted != aliveCount || user.totalFocusTime != totalFocusTimeSeconds) {
+                    transaction.update(userRef, mapOf(
+                        "totalTreesPlanted" to aliveCount,
+                        "totalFocusTime" to totalFocusTimeSeconds
+                    ))
+                }
+                true
+            }.await()
         } catch (e: Exception) {
             e.printStackTrace()
             false

@@ -80,12 +80,12 @@ fun LeaderboardRow(rank: String, user: User, isCurrentUser: Boolean) {
                     .weight(1f)
             ) {
                 Text(
-                    text = if (isCurrentUser) "You" else user.displayName.ifEmpty { "Unknown" },
+                    text = if (isCurrentUser) "Bạn" else user.displayName.ifEmpty { "Không rõ" },
                     fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Medium,
                     fontSize = 16.sp
                 )
                 Text(
-                    text = "${user.totalTreesPlanted} trees planted",
+                    text = "Đã trồng ${user.totalTreesPlanted} cây",
                     fontSize = 14.sp,
                     color = Color.Gray
                 )

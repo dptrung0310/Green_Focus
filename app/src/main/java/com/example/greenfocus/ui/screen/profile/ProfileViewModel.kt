@@ -26,6 +26,12 @@ class ProfileViewModel(
         _uiState.value = _uiState.value.copy(isLoading = true)
 
         viewModelScope.launch {
+            try {
+                repository.syncUserStatsWithSessions()
+            } catch (e: Exception) {
+                android.util.Log.e("ProfileViewModel", "Error syncing focus stats", e)
+            }
+
             repository.getCurrentUserProfileFlow().collect { user ->
                 if (user != null) {
                     _uiState.value = _uiState.value.copy(

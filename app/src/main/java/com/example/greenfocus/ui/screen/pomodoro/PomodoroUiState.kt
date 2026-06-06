@@ -22,5 +22,7 @@ data class PomodoroUiState (
     val showTimeDialog: Boolean = false,
     val showRationaleDialog: Boolean = false,
     val showUsageStatsRationaleDialog: Boolean = false,
-    val isDeepFocusEnabled: Boolean = false
+    val isDeepFocusEnabled: Boolean = false,
+    val todayFocusMinutes: Int = 0,
+    val todayTreesPlanted: Int = 0
 )

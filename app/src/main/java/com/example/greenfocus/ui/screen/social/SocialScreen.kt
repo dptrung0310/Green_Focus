@@ -1,4 +1,4 @@
-﻿package com.example.greenfocus.ui.screen.social
+package com.example.greenfocus.ui.screen.social
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,15 +25,8 @@ fun SocialScreen(
     onNavigateToHome: () -> Unit = {},
     viewModel: SocialViewModel = viewModel()
 ) {
-    var selectedTab by remember { mutableStateOf("Leaderboard") }
+    var selectedTab by remember { mutableStateOf("Bảng xếp hạng") }
     val uiState by viewModel.uiState.collectAsState()
-    val invites by viewModel.inviteList.collectAsState()
-    var showRequestsDialog by remember { mutableStateOf(false) }
-    var inviteErrorMessage by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-
-    val requests = (uiState as? SocialUiState.Success)?.friendRequests ?: emptyList()
-    val totalInvites = requests.size + invites.size
 
     Column(
         modifier = Modifier
@@ -49,36 +42,15 @@ fun SocialScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Social",
+                text = "Cộng đồng",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF2E7D32)
             )
-
-            // Notification Bell Button with Badge
-            IconButton(onClick = { showRequestsDialog = true }) {
-                BadgedBox(
-                    badge = {
-                        if (totalInvites > 0) {
-                            Badge(
-                                containerColor = Color.Red,
-                                modifier = Modifier.offset(x = (-4).dp, y = 4.dp)
-                            )
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = "Friend Requests",
-                        tint = Color(0xFF2E7D32),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
         }
         
         Text(
-            text = "Compete with friends",
+            text = "Thi đua cùng bạn bè",
             fontSize = 16.sp,
             color = Color.Gray,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -89,7 +61,7 @@ fun SocialScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            val tabs = listOf("Leaderboard", "Friend")
+            val tabs = listOf("Bảng xếp hạng", "Bạn bè")
             tabs.forEach { tab ->
                 val isSelected = selectedTab == tab
                 Button(
@@ -121,8 +93,8 @@ fun SocialScreen(
                 }
                 is SocialUiState.Success -> {
                     when (selectedTab) {
-                        "Leaderboard" -> LeaderboardScreen(users = state.leaderboard)
-                        "Friend" -> FriendsScreen(
+                        "Bảng xếp hạng" -> LeaderboardScreen(users = state.leaderboard)
+                        "Bạn bè" -> FriendsScreen(
                             friends = state.friends,
                             viewModel = viewModel
                         )
@@ -137,37 +109,6 @@ fun SocialScreen(
                 }
             }
         }
-    }
-
-    // Friend Requests Dialog
-    if (showRequestsDialog && uiState is SocialUiState.Success) {
-        FriendRequestsDialog(
-            friendRequests = requests,
-            roomInvites = invites,
-            inviteErrorMessage = inviteErrorMessage,
-            onAcceptFriend = { viewModel.acceptRequest(it) },
-            onDeclineFriend = { viewModel.declineRequest(it) },
-            onJoinRoomInvite = { invite ->
-                inviteErrorMessage = null
-                scope.launch {
-                    val result = homeRoomViewModel.joinRoom(invite.roomId)
-                    if (result.isSuccess) {
-                        viewModel.deleteInvite(invite)
-                        showRequestsDialog = false
-                        onNavigateToHome()
-                    } else {
-                        inviteErrorMessage = result.exceptionOrNull()?.message ?: "Không thể vào phòng"
-                    }
-                }
-            },
-            onDismissInvite = { invite ->
-                viewModel.deleteInvite(invite)
-            },
-            onDismiss = {
-                inviteErrorMessage = null
-                showRequestsDialog = false
-            }
-        )
     }
 }
 
@@ -184,7 +125,7 @@ fun FriendRequestsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Friend Invitations", fontWeight = FontWeight.Bold) },
+        title = { Text("Lời mời kết bạn", fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 if (friendRequests.isEmpty() && roomInvites.isEmpty()) {
@@ -192,7 +133,7 @@ fun FriendRequestsDialog(
                         modifier = Modifier.fillMaxWidth().height(100.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("No pending invitations", color = Color.Gray)
+                        Text("Không có lời mời nào", color = Color.Gray)
                     }
                 } else {
                     LazyColumn(
@@ -231,7 +172,7 @@ fun FriendRequestsDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = Color(0xFF2E7D32))
+                Text("Đóng", color = Color(0xFF2E7D32))
             }
         }
     )

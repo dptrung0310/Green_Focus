@@ -3,6 +3,7 @@ package com.example.greenfocus.ui.screen.pomodoro
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import com.example.greenfocus.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -209,7 +210,7 @@ class PomodoroViewModel(
     fun startTimerService(context: Context) {
 
         val intent = Intent(context, TimerForegroundService::class.java).apply {
-            action = "ACTION_START"
+            action = TimerForegroundService.ACTION_START
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -221,8 +222,33 @@ class PomodoroViewModel(
 
     fun stopTimerService(context: Context, markFailed: Boolean = true, resetSeconds: Int? = null) {
         val intent = Intent(context, TimerForegroundService::class.java).apply {
-            action = if (markFailed) "ACTION_STOP" else "ACTION_RESET"
-            resetSeconds?.let { putExtra("RESET_SECONDS", it) }
+            action = if (markFailed) {
+                TimerForegroundService.ACTION_STOP
+            } else {
+                TimerForegroundService.ACTION_RESET
+            }
+            resetSeconds?.let { putExtra(TimerForegroundService.EXTRA_RESET_SECONDS, it) }
+        }
+        context.startService(intent)
+    }
+
+    fun startRoomTaskWatcher(context: Context, roomId: String) {
+        Log.d(TAG, "startRoomTaskWatcher: room=$roomId")
+        val intent = Intent(context, TimerForegroundService::class.java).apply {
+            action = TimerForegroundService.ACTION_WATCH_ROOM
+            putExtra(TimerForegroundService.EXTRA_ROOM_ID, roomId)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    fun stopRoomTaskWatcher(context: Context) {
+        Log.d(TAG, "stopRoomTaskWatcher")
+        val intent = Intent(context, TimerForegroundService::class.java).apply {
+            action = TimerForegroundService.ACTION_CLEAR_ROOM
         }
         context.startService(intent)
     }
@@ -323,6 +349,8 @@ class PomodoroViewModel(
     }
 
     companion object {
+        private const val TAG = "PomodoroViewModel"
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as GreenFocusApp)

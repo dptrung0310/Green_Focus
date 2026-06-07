@@ -75,7 +75,7 @@ fun SetupNavGraph(navController: NavHostController) {
                         Log.d(TAG, "Stopping timer on logout")
                         timerManager.timerCancelled()
                         val intent = Intent(context, TimerForegroundService::class.java).apply {
-                            action = "ACTION_STOP"
+                            action = TimerForegroundService.ACTION_STOP
                         }
                         context.startService(intent)
                     }

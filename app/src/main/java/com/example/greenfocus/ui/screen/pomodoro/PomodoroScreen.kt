@@ -1,21 +1,18 @@
 package com.example.greenfocus.ui.screen.pomodoro
 
 import android.Manifest
-import android.app.Application
 import android.app.Activity
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Bundle
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -106,12 +103,25 @@ fun PomodoroScreen(
     homeRoomViewModel: HomeRoomViewModel = viewModel(),
     socialViewModel: SocialViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val roomState by homeRoomViewModel.uiState.collectAsState()
+    var watchedRoomId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(roomState.activeRoomId) {
-        pomodoroViewModel.setActiveRoom(roomState.activeRoomId)
-        if (roomState.activeRoomId == null) {
+        val activeRoomId = roomState.activeRoomId
+        Log.d("PomodoroScreen", "activeRoomId changed: $activeRoomId, watchedRoomId=$watchedRoomId")
+        pomodoroViewModel.setActiveRoom(activeRoomId)
+        if (activeRoomId == null) {
+            if (watchedRoomId != null) {
+                Log.d("PomodoroScreen", "Stopping room task watcher for room=$watchedRoomId")
+                pomodoroViewModel.stopRoomTaskWatcher(context)
+                watchedRoomId = null
+            }
             pomodoroViewModel.resetToDefault()
+        } else {
+            watchedRoomId = activeRoomId
+            Log.d("PomodoroScreen", "Starting room task watcher for room=$activeRoomId")
+            pomodoroViewModel.startRoomTaskWatcher(context, activeRoomId)
         }
     }
 
@@ -690,39 +700,10 @@ private fun HomeRoomContent(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
-    val application = context.applicationContext as? Application
     val pomodoroUiState by pomodoroViewModel.pomodoroUiState.collectAsState()
     val socialUiState by socialViewModel.uiState.collectAsState()
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
-
-    DisposableEffect(application, roomState.activeRoomId) {
-        val app = application
-        if (app == null || roomState.activeRoomId == null) {
-            onDispose { }
-        } else {
-            var startedCount = 0
-            val callbacks = object : Application.ActivityLifecycleCallbacks {
-                override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: Bundle?) = Unit
-                override fun onActivityStarted(activity: android.app.Activity) {
-                    startedCount += 1
-                }
-                override fun onActivityResumed(activity: android.app.Activity) = Unit
-                override fun onActivityPaused(activity: android.app.Activity) = Unit
-                override fun onActivityStopped(activity: android.app.Activity) {
-                    startedCount = (startedCount - 1).coerceAtLeast(0)
-                    if (startedCount == 0 && activity.isFinishing && !activity.isChangingConfigurations) {
-                        homeRoomViewModel.handleAppExit()
-                    }
-                }
-                override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: Bundle) = Unit
-                override fun onActivityDestroyed(activity: android.app.Activity) = Unit
-            }
-
-            app.registerActivityLifecycleCallbacks(callbacks)
-            onDispose { app.unregisterActivityLifecycleCallbacks(callbacks) }
-        }
-    }
 
     var showInviteDialog by remember { mutableStateOf(false) }
     var pendingInviteIds by remember(roomState.activeRoomId) { mutableStateOf(setOf<String>()) }

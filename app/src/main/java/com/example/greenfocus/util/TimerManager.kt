@@ -94,6 +94,8 @@ class TimerManager(
         activeRoomId = roomId
     }
 
+    fun getActiveRoomId(): String? = activeRoomId
+
     fun resetTimer(resetSeconds: Int? = null) {
         timerJob?.cancel()
         val nextTime = resetSeconds ?: _timerState.value.totalTime

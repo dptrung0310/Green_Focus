@@ -3,9 +3,11 @@ package com.example.greenfocus.ui.screen.pomodoro.room
 import com.example.greenfocus.data.model.TreeType
 import com.example.greenfocus.data.model.User
 import com.example.greenfocus.di.FirebaseModule
+import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -84,20 +86,36 @@ class TeamRoomRepository(
     }
 
     suspend fun leaveRoom(roomId: String, userId: String): Result<Unit> = runCatching {
+        Log.d(TAG, "leaveRoom: start room=$roomId user=$userId")
         val roomRef = roomDoc(roomId)
         val membersRef = membersCol(roomId)
         val roomSnapshot = roomRef.get().await()
-        if (!roomSnapshot.exists()) return@runCatching
+        if (!roomSnapshot.exists()) {
+            Log.w(TAG, "leaveRoom: room does not exist room=$roomId")
+            return@runCatching
+        }
 
         val membersSnapshot = membersRef.get().await()
         val members = membersSnapshot.documents.mapNotNull { doc ->
-            doc.toObject(TeamMember::class.java)
+            doc.toObject(TeamMember::class.java)?.let { member ->
+                member.copy(uid = member.uid.ifBlank { doc.id })
+            }
         }
         val remainingMembers = members.filter { member -> member.uid != userId }
+        val currentMemberDoc = membersSnapshot.documents.firstOrNull { doc ->
+            doc.id == userId || doc.getString("uid") == userId
+        }
+
+        Log.d(
+            TAG,
+            "leaveRoom: memberCount=${members.size}, remainingCount=${remainingMembers.size}, " +
+                "currentMemberDoc=${currentMemberDoc?.id}, host=${roomSnapshot.getString("hostId")}"
+        )
 
         val batch = db.batch()
 
         if (remainingMembers.isEmpty()) {
+            Log.d(TAG, "leaveRoom: deleting room because user is last member room=$roomId")
             membersSnapshot.documents.forEach { doc ->
                 batch.delete(doc.reference)
             }
@@ -107,21 +125,32 @@ class TeamRoomRepository(
             }
             batch.delete(roomRef)
         } else {
-            batch.delete(membersRef.document(userId))
+            batch.delete(currentMemberDoc?.reference ?: membersRef.document(userId))
             val hostId = roomSnapshot.getString("hostId") ?: ""
             if (hostId == userId) {
                 val newHost = remainingMembers
                     .sortedBy { member -> member.joinedAt?.toDate()?.time ?: Long.MAX_VALUE }
                     .first()
+                Log.d(TAG, "leaveRoom: transferring host room=$roomId newHost=${newHost.uid}")
                 batch.update(roomRef, "hostId", newHost.uid)
                 batch.update(membersRef.document(newHost.uid), "role", ROLE_HOST)
             }
         }
 
         batch.commit().await()
+        Log.d(TAG, "leaveRoom: success room=$roomId user=$userId")
     }
 
     suspend fun leaveAllRoomsForUser(userId: String): Result<Unit> = runCatching {
+        val roomIds = getJoinedRoomIds(userId).getOrThrow()
+
+        roomIds.forEach { roomId ->
+            leaveRoom(roomId, userId).getOrThrow()
+        }
+    }
+
+    suspend fun getJoinedRoomIds(userId: String): Result<List<String>> = runCatching {
+        Log.d(TAG, "getJoinedRoomIds: query start user=$userId")
         val memberSnapshots = db.collectionGroup("members")
             .whereEqualTo("uid", userId)
             .get()
@@ -130,10 +159,8 @@ class TeamRoomRepository(
         val roomIds = memberSnapshots.documents.mapNotNull { memberDoc ->
             memberDoc.reference.parent.parent?.id
         }.distinct()
-
-        roomIds.forEach { roomId ->
-            leaveRoom(roomId, userId).getOrThrow()
-        }
+        Log.d(TAG, "getJoinedRoomIds: result user=$userId rooms=$roomIds")
+        roomIds
     }
 
     suspend fun deleteRoom(roomId: String): Result<Unit> = runCatching {
@@ -304,6 +331,90 @@ class TeamRoomRepository(
         }.await()
     }
 
+    suspend fun cancelSession(roomId: String, userId: String): Result<Unit> = runCatching {
+        Log.d(TAG, "cancelSession: start room=$roomId user=$userId")
+        val roomRef = roomDoc(roomId)
+        val roomSnapshot = roomRef.get().await()
+        if (!roomSnapshot.exists()) {
+            Log.w(TAG, "cancelSession: room does not exist room=$roomId")
+            return@runCatching
+        }
+
+        val status = roomSnapshot.getString("status") ?: ROOM_STATUS_WAITING
+        if (status != ROOM_STATUS_STARTED) {
+            Log.d(TAG, "cancelSession: skipped because room is not started room=$roomId status=$status")
+            return@runCatching
+        }
+
+        val membersSnapshot = membersCol(roomId).get().await()
+        val focusLostEventId = "${roomId}_${userId}_${UUID.randomUUID()}"
+        val durationMs = roomSnapshot.getLong("durationMs") ?: DEFAULT_ROOM_DURATION_MS
+        val durationMinutes = (durationMs / 60_000L).toInt().coerceAtLeast(1)
+        val treeId = roomSnapshot.getString("treeId")?.takeIf { it.isNotBlank() }
+            ?: TreeType.DEFAULT.id
+        val startTime = System.currentTimeMillis()
+        val batch = db.batch()
+
+        Log.d(
+            TAG,
+            "cancelSession: writing fail event room=$roomId event=$focusLostEventId " +
+                "memberCount=${membersSnapshot.size()} durationMinutes=$durationMinutes treeId=$treeId"
+        )
+
+        // Reuse the existing focus-lost event path so every listener resets together.
+        batch.update(
+            roomRef,
+            mapOf(
+                "status" to ROOM_STATUS_WAITING,
+                "startedAt" to FieldValue.delete(),
+                "focusLostAt" to FieldValue.serverTimestamp(),
+                "focusLostByUid" to userId,
+                "focusLostEventId" to focusLostEventId
+            )
+        )
+
+        membersSnapshot.documents
+            .firstOrNull { memberDoc ->
+                memberDoc.id == userId || memberDoc.getString("uid") == userId
+            }
+            ?.reference
+            ?.let { currentMemberRef ->
+                batch.update(
+                    currentMemberRef,
+                    mapOf(
+                        "lastFocusLostAt" to FieldValue.serverTimestamp(),
+                        "lastFocusLostEventId" to focusLostEventId
+                    )
+                )
+            }
+
+        // Write deterministic DEAD sessions before leaving, because the service may stop
+        // before Cloud Functions or the remaining clients handle the event.
+        membersSnapshot.documents.forEach { memberDoc ->
+            val uid = memberDoc.getString("uid") ?: memberDoc.id
+            if (uid.isBlank()) return@forEach
+            val sessionRef = db.collection("sessions")
+                .document(uid)
+                .collection("user_sessions")
+                .document(focusLostEventId)
+            batch.set(
+                sessionRef,
+                mapOf(
+                    "treeId" to treeId,
+                    "startTime" to startTime,
+                    "durationMinutes" to durationMinutes,
+                    "status" to "DEAD",
+                    "isGroupSession" to true,
+                    "roomId" to roomId
+                ),
+                SetOptions.merge()
+            )
+        }
+
+        batch.commit().await()
+        Log.d(TAG, "cancelSession: success room=$roomId event=$focusLostEventId")
+    }
+
     suspend fun markFocusLostEventHandled(
         roomId: String,
         userId: String,
@@ -466,5 +577,9 @@ class TeamRoomRepository(
         return (roomInvites + legacyInvites)
             .distinctBy { "${it.roomId}|${it.fromUid}|${it.toUid}" }
             .sortedByDescending { it.createdAt?.toDate()?.time ?: 0L }
+    }
+
+    companion object {
+        private const val TAG = "TeamRoomRepository"
     }
 }

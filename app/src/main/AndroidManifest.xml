@@ -38,9 +38,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@drawable/ic_greenfocus_launcher"
+        android:icon="@mipmap/ic_launcher_greenfocus"
         android:label="@string/app_name"
-        android:roundIcon="@drawable/ic_greenfocus_launcher"
+        android:roundIcon="@mipmap/ic_launcher_greenfocus_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.GreenFocus">
         <meta-data

@@ -316,60 +316,7 @@ private fun ArSceneContent(
             }
         }
 
-        var showDebug by remember { mutableStateOf(false) }
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(top = 150.dp, start = 12.dp)
-        ) {
-            if (showDebug) {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.70f), shape = RoundedCornerShape(12.dp))
-                        .border(width = 1.dp, color = Color.White.copy(alpha = 0.1f), shape = RoundedCornerShape(12.dp))
-                        .padding(10.dp)
-                        .width(200.dp)
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text("Debug Console", color = Color.Gray, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(2.dp))
-                        Text("Tracking: $trackingStateTxt",
-                            color = if (trackingStateTxt == "TRACKING") Color.Green else Color(0xFFFFAB40),
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Text("Reason: $failureReasonTxt",
-                            color = if (failureReasonTxt == "OK") Color.Green else Color(0xFFFF6E40),
-                            fontSize = 11.sp)
-                        Text("Features: $featurePointCount",
-                            color = if (featurePointCount > 30) Color.Green else Color(0xFFFFAB40),
-                            fontSize = 11.sp)
-                        Text("Planes: $planesTracked",
-                            color = if (planesTracked > 0) Color.Green else Color.Red,
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        Text("Live Trees: ${liveSessions.size}", color = Color.Cyan, fontSize = 11.sp)
-                        Text("Rendered: ${placedTrees.size}", color = Color.Magenta, fontSize = 11.sp)
-                        Text(hitInfo, color = Color.Yellow, fontSize = 10.sp)
-                        Text(debugLog, color = Color.White, fontSize = 10.sp)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "Ẩn Console",
-                            color = Color.LightGray,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { showDebug = false }
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.5f), shape = RoundedCornerShape(10.dp))
-                        .clickable { showDebug = true }
-                        .padding(horizontal = 10.dp, vertical = 6.dp)
-                ) {
-                    Text("Hiện Debug", color = Color.White, fontSize = 10.sp)
-                }
-            }
-        }
+
 
         Box(
             modifier = Modifier
@@ -468,18 +415,6 @@ private fun ArSceneContent(
                                 text = "Danh sách cây sống đang hiển thị trong AR",
                                 color = Color.White.copy(alpha = 0.6f),
                                 fontSize = 11.sp
-                            )
-                        }
-                        Box(
-                            modifier = Modifier
-                                .background(Color(0xFF2E7D32), shape = RoundedCornerShape(12.dp))
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = "${liveSessions.size} Cây",
-                                color = Color.White,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold
                             )
                         }
                     }

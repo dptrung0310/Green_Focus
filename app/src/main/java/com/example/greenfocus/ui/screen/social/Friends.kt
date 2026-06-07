@@ -1,5 +1,6 @@
 package com.example.greenfocus.ui.screen.social
 
+import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -68,13 +69,17 @@ fun FriendsScreen(
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp))
-            Text("Thêm bạn bè")
+            Text(
+                text = "Thêm bạn bè",
+                color = Color.White,
+                )
         }
 
         Text(
             text = "Bạn bè của bạn",
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp,
+            color = Color.Black,
             modifier = Modifier.padding(vertical = 8.dp)
         )
 
@@ -298,6 +303,7 @@ fun FriendRow(user: User) {
             Text(
                 text = user.displayName.ifEmpty { "Không rõ" },
                 fontWeight = FontWeight.Medium,
+                color = Color.Black,
                 fontSize = 16.sp
             )
             Text(

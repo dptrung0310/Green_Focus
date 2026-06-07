@@ -188,7 +188,7 @@ class TimerForegroundService : LifecycleService() {
         timerStateJob?.cancel()
         timerStateJob = lifecycleScope.launch {
             timerManager.timerState.collect { state ->
-                if (state.currentTime <= 0) {
+                if (state.sessionState == SessionState.SUCCESS || state.currentTime <= 0) {
                     playSound(state.currentFinishSound)
                     notificationManager.notify(finishedNotificationId, buildFinishedNotification())
                     stopDeepModeWatcher()

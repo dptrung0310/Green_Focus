@@ -302,6 +302,22 @@ class PomodoroViewModel(
                 roomId = roomId
             )
         )
+        val coinsIncrement = durationMinutes.coerceAtLeast(1)
+        val treesPlantedIncrement = 1
+        val xpIncrement = coinsIncrement * 10
+        val durationSeconds = durationMinutes.toLong() * 60L
+        viewModelScope.launch {
+            try {
+                userRepository.updateFocusStats(
+                    coinsIncrement = coinsIncrement,
+                    durationSeconds = durationSeconds,
+                    treesPlantedIncrement = treesPlantedIncrement,
+                    xpIncrement = xpIncrement
+                )
+            } catch (e: Exception) {
+                Log.d("PomodoroViewModel", "Error updating focus stats: ${e.message}")
+            }
+        }
         _uiState.update {
             it.copy(
                 selectedTreeImage = it.selectedTree.imageStaticBig,

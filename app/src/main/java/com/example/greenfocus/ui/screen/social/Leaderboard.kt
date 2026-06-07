@@ -82,6 +82,7 @@ fun LeaderboardRow(rank: String, user: User, isCurrentUser: Boolean) {
                 Text(
                     text = if (isCurrentUser) "Bạn" else user.displayName.ifEmpty { "Không rõ" },
                     fontWeight = if (isCurrentUser) FontWeight.Bold else FontWeight.Medium,
+                    color = Color.Black,
                     fontSize = 16.sp
                 )
                 Text(

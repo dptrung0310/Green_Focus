@@ -36,7 +36,7 @@ class TeamRoomRepository(
             "startedAt" to null,
             "durationMs" to durationMs,
             "treeId" to treeId,
-            "isDeepModeEnabled" to false,
+            "deepModeEnabled" to false,
             "focusLostAt" to null,
             "focusLostByUid" to null,
             "focusLostEventId" to null,
@@ -230,7 +230,7 @@ class TeamRoomRepository(
     }
 
     suspend fun updateRoomDeepMode(roomId: String, isDeepModeEnabled: Boolean): Result<Unit> = runCatching {
-        roomDoc(roomId).update("isDeepModeEnabled", isDeepModeEnabled).await()
+        roomDoc(roomId).update("deepModeEnabled", isDeepModeEnabled).await()
     }
 
     suspend fun setRoomStatusWaiting(roomId: String): Result<Unit> = runCatching {

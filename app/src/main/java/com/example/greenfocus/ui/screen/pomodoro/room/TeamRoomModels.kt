@@ -22,7 +22,7 @@ data class TeamRoom(
     val startedAt: Timestamp? = null,
     val durationMs: Long = DEFAULT_ROOM_DURATION_MS,
     val treeId: String = TreeType.DEFAULT.id,
-    val isDeepModeEnabled: Boolean = false,
+    val deepModeEnabled: Boolean = false,
     val focusLostAt: Timestamp? = null,
     val focusLostByUid: String? = null,
     val focusLostEventId: String? = null,

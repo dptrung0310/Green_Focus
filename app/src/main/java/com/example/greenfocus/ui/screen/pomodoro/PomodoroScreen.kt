@@ -778,8 +778,8 @@ private fun HomeRoomContent(
         }
     }
 
-    LaunchedEffect(room?.isDeepModeEnabled) {
-        val enabled = room?.isDeepModeEnabled ?: false
+    LaunchedEffect(room?.deepModeEnabled) {
+        val enabled = room?.deepModeEnabled ?: false
         pomodoroViewModel.setDeepFocus(enabled)
     }
 

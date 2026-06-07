@@ -131,11 +131,11 @@ export const onFriendRequestCreated = functions.firestore
       console.error("Missing required parameters: toUid or fromUid.");
       return null;
     }
-    const fromName = fromDisplayName || "Someone";
+    const fromName = fromDisplayName || "Ai đó";
     const payload: NotificationPayload = {
       notification: {
-        title: "New Friend Request",
-        body: `${fromName} sent you a friend request`,
+        title: "Lời Mời Kết Bạn Mới",
+        body: `${fromName} đã gửi cho bạn lời mời kết bạn`,
       },
       data: {
         type: "friend_request",
@@ -165,11 +165,11 @@ export const onRoomInviteCreated = functions.firestore
       );
       return null;
     }
-    const displayName = fromName || "Someone";
+    const displayName = fromName || "Ai đó";
     const payload: NotificationPayload = {
       notification: {
-        title: "Room Invitation",
-        body: `${displayName} invited you to join a room`,
+        title: "Lời Mời Tham Gia Phòng",
+        body: `${displayName} đã mời bạn tham gia phòng`,
       },
       data: {
         type: "room_invite",

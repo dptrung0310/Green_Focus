@@ -72,13 +72,30 @@ class TimerManager(
         _timerState.update { it.copy(isTimerRunning = true, sessionState = SessionState.INIT) }
         _timerState.update { it.copy(sessionState = SessionState.RUNNING) }
 
+        // Nếu đã join phòng khi đã qua nửa thời gian → trigger HALF_DONE ngay
+        val already = _timerState.value
+        var halfFired = if (already.totalTime > 0 && already.currentTime * 2 <= already.totalTime) {
+            _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
+            _timerState.update { it.copy(sessionState = SessionState.RUNNING) }
+            true  // đã fire rồi, không fire lại trong vòng lặp
+        } else {
+            false
+        }
+
         timerJob = scope.launch {
             while (_timerState.value.currentTime > 0) {
                 delay(1000L)
                 _timerState.update { it.copy(currentTime = it.currentTime - 1) }
 
-                if (_timerState.value.currentTime * 2 == _timerState.value.totalTime) {
-                    _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
+                // Dùng <= thay vì == để không miss nếu tick bị delay trên máy thật
+                // halfFired đảm bảo chỉ trigger 1 lần duy nhất mỗi session
+                if (!halfFired) {
+                    val s = _timerState.value
+                    if (s.currentTime * 2 <= s.totalTime) {
+                        halfFired = true
+                        _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
+                        _timerState.update { it.copy(sessionState = SessionState.RUNNING) }
+                    }
                 }
             }
             timerFinished(scope)

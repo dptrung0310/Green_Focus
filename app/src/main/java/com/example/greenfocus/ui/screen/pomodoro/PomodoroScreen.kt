@@ -1193,6 +1193,7 @@ private fun HomeRoomContent(
                     ) {
                         Text(
                             text = stringResource(R.string.pomodoro_start_button),
+                            color = Color.White,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -1310,7 +1311,8 @@ private fun TeamMembersRow(members: List<TeamMember>) {
                 Text(
                     text = member.displayName,
                     fontSize = 12.sp,
-                    maxLines = 1
+                    maxLines = 1,
+                    color = Color.Black
                 )
             }
         }
@@ -1367,9 +1369,19 @@ private fun InviteFriendDialog(
                             Button(
                                 onClick = { onInvite(friend) },
                                 enabled = !isInvited,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(32.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                                shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                             ) {
-                                Text(if (isInvited) "Đã mời" else "Mời")
+                                Text(
+                                    text = if (isInvited) "Đã mời" else "Mời",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    maxLines = 1
+                                )
                             }
                         }
                     }
@@ -1518,65 +1530,108 @@ fun TimerDialog(
     onUserInputChange: (String) -> Unit,
     onConfirm: () -> Unit
 ) {
+    // Local string state — cho phép ô trống hoàn toàn khi người dùng xóa hết
+    // Nếu giá trị ban đầu là 0 (chưa nhập gì) thì để trống, ngược lại hiện số
+    var inputText by remember {
+        mutableStateOf(if (dialogTimeValue <= 0) "" else dialogTimeValue.toString())
+    }
+
+    // Số phút hợp lệ từ inputText (null nếu rỗng hoặc không phải số)
+    val parsedMinutes = inputText.toIntOrNull()
+
     Dialog(
         onDismissRequest = { onDismiss() },
         content = {
-            Box(modifier = Modifier
-                .width(400.dp)
-                .background(
-                    color = Color.White,
-                    shape = RoundedCornerShape(16.dp) // 1. Rounded corners
-                )
-                .padding(16.dp) // 2. Inner padding))
-            )
-            {
-                Column() {
+            Box(
+                modifier = Modifier
+                    .width(400.dp)
+                    .background(
+                        color = Color.White,
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Column {
                     Text(
                         text = stringResource(R.string.pomodoro_timer_dialog),
                         style = MaterialTheme.typography.headlineSmall,
+                        color = Color(0xFF1C1B1F),
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
                     OutlinedTextField(
-                        label = { Text(stringResource(R.string.pomodoro_timer_dialog)) },
-                        value = dialogTimeValue.toString(),
-                        onValueChange = onUserInputChange,
+                        label = {
+                            Text(
+                                stringResource(R.string.pomodoro_timer_dialog),
+                                color = Color(0xFF2E7D32)
+                            )
+                        },
+                        // Dùng local string — có thể là "" khi ô trống
+                        value = inputText,
+                        onValueChange = { raw ->
+                            // Chỉ giữ lại chữ số, tối đa 3 ký tự (999 phút)
+                            val filtered = raw.filter { it.isDigit() }.take(3)
+                            // Xóa số 0 đứng đầu (ví dụ "07" → "7"), trừ khi ô rỗng
+                            val cleaned = if (filtered.isEmpty()) "" else filtered.trimStart('0').ifEmpty { "0" }
+                            inputText = cleaned
+                            // Thông báo cho ViewModel với giá trị hợp lệ
+                            onUserInputChange(cleaned)
+                        },
+                        placeholder = { Text("Ví dụ: 25", color = Color(0xFFB0BEC5)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done // Shows a "Done" checkmark on keyboard
+                            imeAction = ImeAction.Done
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor     = Color(0xFF1C1B1F),
+                            unfocusedTextColor   = Color(0xFF1C1B1F),
+                            focusedBorderColor   = Color(0xFF2E7D32),
+                            unfocusedBorderColor = Color(0xFFB0BEC5),
+                            focusedContainerColor   = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            cursorColor = Color(0xFF2E7D32),
+                            focusedLabelColor   = Color(0xFF2E7D32),
+                            unfocusedLabelColor = Color(0xFF757575),
+                        )
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // --- ADDED BUTTONS ---
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End // Aligns buttons to the right
+                        horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = onDismiss) {
-                            Text(stringResource(R.string.dialog_cancel))
+                            Text(
+                                stringResource(R.string.dialog_cancel),
+                                color = Color(0xFF757575)
+                            )
                         }
 
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Button(
-                            enabled = dialogTimeValue > 0,
+                            // Bật nút chỉ khi inputText là số dương hợp lệ
+                            enabled = (parsedMinutes ?: 0) > 0,
                             onClick = {
                                 onConfirm()
-                                onDismiss() // Dismiss the dialog after confirming
-                            }
+                                onDismiss()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF2E7D32),
+                                contentColor   = Color.White
+                            )
                         ) {
-                            Text(stringResource(R.string.dialog_confirm))
+                            Text(stringResource(R.string.dialog_confirm), color = Color.White)
                         }
                     }
                 }
             }
-
         }
     )
 }
+
 
 @Composable
 fun TreeSelectionRow(

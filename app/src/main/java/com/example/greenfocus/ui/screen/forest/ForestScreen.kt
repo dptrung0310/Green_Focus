@@ -176,16 +176,20 @@ fun FilterTabItem(
             .clip(RoundedCornerShape(50))
             .background(backgroundColor)
             .clickable { onClick() }
-            .padding(vertical = 12.dp),
+            .padding(vertical = 10.dp, horizontal = 6.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
             color = textColor,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+            fontSize = 12.sp,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
         )
     }
 }
+
 
 @Composable
 fun TreeGrid(selectedFilter: ForestFilter, sessions: List<FocusSession>) {

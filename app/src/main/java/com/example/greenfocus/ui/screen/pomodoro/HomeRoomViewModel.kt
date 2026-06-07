@@ -213,6 +213,15 @@ class HomeRoomViewModel(
         }
     }
 
+    fun updateRoomDeepMode(isDeepModeEnabled: Boolean) {
+        val id = _uiState.value.activeRoomId ?: return
+        if (!_uiState.value.isHost) return
+        viewModelScope.launch {
+            teamRoomRepository.updateRoomDeepMode(id, isDeepModeEnabled)
+                .onFailure { Log.e(TAG, "updateRoomDeepMode failed", it) }
+        }
+    }
+
     fun reportFocusLost() {
         val id = _uiState.value.activeRoomId ?: return
         val user = currentUser ?: return

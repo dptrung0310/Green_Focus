@@ -58,8 +58,8 @@ class ProdUserSettingRepository(
         }
         .map {
             preferences ->
-                val currentFinishSound = preferences[CURRENT_FINISH_SOUND] ?: Sound.WIN_BELL
-                val deepModeAllowedApps = preferences[DEEP_MODE_ALLOWED_APPS]?.let { Json.decodeFromString<Set<String>>(it) } ?: emptySet()
+                val currentFinishSound = preferences[CURRENT_FINISH_SOUND] ?: DefaultSettings.FINISH_SOUND
+                val deepModeAllowedApps = preferences[DEEP_MODE_ALLOWED_APPS]?.let { Json.decodeFromString<Set<String>>(it) } ?: DefaultSettings.DEEP_MODE_APPS
                 UserPreferences(currentFinishSound, deepModeAllowedApps)
         }
 

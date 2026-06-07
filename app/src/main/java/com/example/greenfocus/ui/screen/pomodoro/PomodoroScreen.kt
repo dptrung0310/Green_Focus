@@ -778,6 +778,25 @@ private fun HomeRoomContent(
         }
     }
 
+    LaunchedEffect(room?.isDeepModeEnabled) {
+        val enabled = room?.isDeepModeEnabled ?: false
+        pomodoroViewModel.setDeepFocus(enabled)
+    }
+
+    LaunchedEffect(pomodoroUiState.isDeepFocusEnabled) {
+        if (pomodoroUiState.isDeepFocusEnabled) {
+            val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+            val mode = appOps.checkOpNoThrow(
+                AppOpsManager.OPSTR_GET_USAGE_STATS,
+                Process.myUid(),
+                context.packageName
+            )
+            if (mode != AppOpsManager.MODE_ALLOWED) {
+                pomodoroViewModel.toggleUsageStatsRationaleDialog()
+            }
+        }
+    }
+
     LaunchedEffect(room?.status, room?.startedAt) {
         if (room != null && room.status == ROOM_STATUS_STARTED && room.startedAt != null) {
             val startedAtMs = room.startedAt.toDate().time
@@ -1116,7 +1135,9 @@ private fun HomeRoomContent(
                                             context.packageName
                                         )
                                         if (mode == AppOpsManager.MODE_ALLOWED) {
-                                            pomodoroViewModel.toggleDeepFocus()
+                                            val nextVal = !pomodoroUiState.isDeepFocusEnabled
+                                            pomodoroViewModel.setDeepFocus(nextVal)
+                                            homeRoomViewModel.updateRoomDeepMode(nextVal)
                                         } else {
                                             pomodoroViewModel.toggleUsageStatsRationaleDialog()
                                         }
@@ -1149,6 +1170,39 @@ private fun HomeRoomContent(
                                     uncheckedThumbColor = Color.Gray,
                                     uncheckedTrackColor = Color(0xFFE0E0E0)
                                 )
+                            )
+                        }
+                    }
+                }
+            } else {
+                AnimatedVisibility(
+                    visible = !pomodoroUiState.isTimerRunning && pomodoroUiState.isDeepFocusEnabled,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp))
+                                .background(Color(0xFFE8F5E9))
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lock,
+                                contentDescription = "Icon khóa",
+                                tint = Color(0xFF388E3C),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = "Chế độ tập trung sâu đang bật",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = Color(0xFF2E7D32),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.weight(1f)
                             )
                         }
                     }

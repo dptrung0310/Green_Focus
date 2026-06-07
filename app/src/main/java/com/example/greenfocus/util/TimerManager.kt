@@ -129,6 +129,9 @@ class TimerManager(
     fun toggleDeepMode() {
         _timerState.update { it.copy(isDeepModeEnabled = !it.isDeepModeEnabled) }
     }
+    fun setDeepMode(enabled: Boolean) {
+        _timerState.update { it.copy(isDeepModeEnabled = enabled) }
+    }
     fun setTree(newTree: TreeType) {
         _timerState.update { it.copy(currentTree = newTree) }
     }

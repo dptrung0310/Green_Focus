@@ -161,6 +161,10 @@ class PomodoroViewModel(
         _uiState.update { it.copy(isDeepFocusEnabled = !it.isDeepFocusEnabled)}
         timerManager.toggleDeepMode()
     }
+    fun setDeepFocus(enabled: Boolean) {
+        _uiState.update { it.copy(isDeepFocusEnabled = enabled)}
+        timerManager.setDeepMode(enabled)
+    }
 
     fun setTimerMinutes(minutes: Int) {
         if (_uiState.value.isTimerRunning) return

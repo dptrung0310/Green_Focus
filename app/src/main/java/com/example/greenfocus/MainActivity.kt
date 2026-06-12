@@ -1,6 +1,7 @@
 package com.example.greenfocus
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
 
         // Request Notification permission for Android 13+
         askNotificationPermission()
+        askExactAlarmPermission()
 
         enableEdgeToEdge()
         setContent {
@@ -74,6 +76,19 @@ class MainActivity : ComponentActivity() {
                 PackageManager.PERMISSION_GRANTED
             ) {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    private fun askExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            if (!alarmManager.canScheduleExactAlarms()) {
+                val intent = Intent().apply {
+                    action = android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM
+                    data = android.net.Uri.fromParts("package", packageName, null)
+                }
+                startActivity(intent)
             }
         }
     }

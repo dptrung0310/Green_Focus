@@ -489,6 +489,15 @@ class TeamRoomRepository(
         return roomDoc(roomId).get().await().exists()
     }
 
+    suspend fun getRoom(roomId: String): TeamRoom? = runCatching {
+        val snapshot = roomDoc(roomId).get().await()
+        if (snapshot.exists()) {
+            snapshot.toObject(TeamRoom::class.java)?.copy(roomId = snapshot.id)
+        } else {
+            null
+        }
+    }.getOrNull()
+
     fun observeRoom(roomId: String): Flow<TeamRoom?> = callbackFlow {
         val listener = roomDoc(roomId).addSnapshotListener { snapshot, error ->
             if (error != null) {

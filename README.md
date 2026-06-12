@@ -1,10 +1,10 @@
-# GreenFocus - Ứng dụng Tập trung & Trồng cây 🌳
+# GreenFocus - Ứng dụng Tập trung & Trồng cây
 
 **GreenFocus** là một ứng dụng di động hỗ trợ tập trung và quản lý thời gian theo phương pháp Pomodoro, được xây dựng trên nền tảng **Android Native (Kotlin + Jetpack Compose)** kết hợp hệ thống máy chủ **Firebase**. Lấy cảm hứng từ ứng dụng Forest nổi tiếng, GreenFocus kết hợp cơ chế trò chơi hóa (gamification) để biến thời gian tập trung thành các cây ảo sinh động, giúp người dùng tăng hiệu suất làm việc và học tập.
 
 ---
 
-## 🌟 Tính năng chính
+## Tính năng chính
 
 ### 1. Đồng hồ Pomodoro & Chế độ Tập trung Sâu
 - **Đồng hồ tùy chỉnh**: Lựa chọn thời gian tập trung với giao diện vòng tròn đếm ngược trực quan, mượt mà.
@@ -40,7 +40,7 @@
 
 ---
 
-## 🛠️ Công nghệ sử dụng
+## Công nghệ sử dụng
 
 ### 1. Client App (Android Native)
 - **Ngôn ngữ**: Kotlin
@@ -63,7 +63,7 @@
 
 ---
 
-## 📂 Cấu trúc thư mục dự án
+## Cấu trúc thư mục dự án
 
 ```text
 GreenFocus/

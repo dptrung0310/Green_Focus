@@ -1,5 +1,6 @@
 package com.example.greenfocus.util
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -17,8 +18,10 @@ import androidx.lifecycle.lifecycleScope
 import com.example.greenfocus.GreenFocusApp
 import com.example.greenfocus.MainActivity
 import com.example.greenfocus.R
+import com.example.greenfocus.data.model.User
 import com.example.greenfocus.di.FirebaseModule
 import com.example.greenfocus.ui.screen.pomodoro.room.TeamRoomRepository
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,9 +43,13 @@ class TimerForegroundService : LifecycleService() {
     private lateinit var soundManager: SoundManager
     private lateinit var teamRoomRepository: TeamRoomRepository
 
+    private val alarmManager by lazy { getSystemService(Context.ALARM_SERVICE) as AlarmManager }
+
     private var timerStateJob: Job? = null
     private var deepModeJob: Job? = null
     private var isStoppingSelf = false
+    private var isTimerCompletedHandled = false
+    private var wakeLock: android.os.PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -102,19 +109,25 @@ class TimerForegroundService : LifecycleService() {
 
             ACTION_START -> {
                 playSound(Sound.CLICK)
+                acquireWakeLock()
+                isTimerCompletedHandled = false
                 timerManager.startTimer(lifecycleScope)
                 Log.d(TAG, "ACTION_START: timer started for activeRoom=${timerManager.getActiveRoomId()}")
                 startForeground(notificationId, buildChronometerNotification())
+                val triggerTimeMillis = System.currentTimeMillis() + (timerManager.timerState.value.currentTime * 1000L)
+                scheduleAlarm(triggerTimeMillis)
                 startDeepModeWatcherIfNeeded()
             }
 
             ACTION_STOP -> {
                 Log.d(TAG, "ACTION_STOP: requested")
+                cancelAlarm()
                 if (timerManager.timerState.value.isTimerRunning) {
                     playSound(Sound.LOSE)
                     timerManager.pauseTimer()
                 }
                 stopDeepModeWatcher()
+                releaseWakeLock()
                 if (timerManager.getActiveRoomId() != null) {
                     startForeground(notificationId, buildRoomPresenceNotification())
                 } else {
@@ -128,8 +141,48 @@ class TimerForegroundService : LifecycleService() {
                     timerManager.timerState.value.totalTime
                 )
                 Log.d(TAG, "ACTION_RESET: resetSeconds=$resetSeconds")
+                cancelAlarm()
                 timerManager.resetTimer(resetSeconds)
                 stopDeepModeWatcher()
+                releaseWakeLock()
+                if (timerManager.getActiveRoomId() != null) {
+                    startForeground(notificationId, buildRoomPresenceNotification())
+                } else {
+                    stopForegroundAndSelf()
+                }
+            }
+
+            ACTION_FINISH_ALARM -> {
+                Log.d(TAG, "ACTION_FINISH_ALARM: Alarm triggered!")
+                cancelAlarm()
+                if (!isTimerCompletedHandled) {
+                    isTimerCompletedHandled = true
+                    val state = timerManager.timerState.value
+                    playSound(state.currentFinishSound)
+                    notificationManager.notify(finishedNotificationId, buildFinishedNotification())
+                    stopDeepModeWatcher()
+                    releaseWakeLock()
+
+                    // Mark room completed in background if we are the Host
+                    val roomId = timerManager.getActiveRoomId()
+                    if (roomId != null) {
+                        val uid = FirebaseModule.auth.currentUser?.uid
+                        if (uid != null) {
+                            lifecycleScope.launch {
+                                try {
+                                    val room = teamRoomRepository.getRoom(roomId)
+                                    if (room != null && room.hostId == uid) {
+                                        Log.d(TAG, "Host timer finished in background alarm: marking room completed")
+                                        teamRoomRepository.markRoomCompleted(roomId, User(uid = uid))
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Failed to mark room completed in background alarm", e)
+                                }
+                            }
+                        }
+                    }
+                }
+                timerManager.timerFinished(lifecycleScope)
                 if (timerManager.getActiveRoomId() != null) {
                     startForeground(notificationId, buildRoomPresenceNotification())
                 } else {
@@ -150,9 +203,11 @@ class TimerForegroundService : LifecycleService() {
             "onDestroy: activeRoom=${timerManager.getActiveRoomId()}, storedRoom=${getStoredRoomId()}, " +
                 "isTimerRunning=${timerManager.timerState.value.isTimerRunning}"
         )
+        cancelAlarm()
         timerStateJob?.cancel()
         timerStateJob = null
         stopDeepModeWatcher()
+        releaseWakeLock()
         super.onDestroy()
     }
 
@@ -163,6 +218,7 @@ class TimerForegroundService : LifecycleService() {
             "onTaskRemoved: rootIntent=$rootIntent, activeRoom=${timerManager.getActiveRoomId()}, " +
                 "storedRoom=${getStoredRoomId()}, isTimerRunning=${timerManager.timerState.value.isTimerRunning}"
         )
+        cancelAlarm()
         lifecycleScope.launch {
             val wasFocusing = timerManager.timerState.value.isTimerRunning
             try {
@@ -188,18 +244,64 @@ class TimerForegroundService : LifecycleService() {
         timerStateJob?.cancel()
         timerStateJob = lifecycleScope.launch {
             timerManager.timerState.collect { state ->
-                if (state.sessionState == SessionState.SUCCESS || state.currentTime <= 0) {
-                    playSound(state.currentFinishSound)
-                    notificationManager.notify(finishedNotificationId, buildFinishedNotification())
-                    stopDeepModeWatcher()
-                    if (timerManager.getActiveRoomId() != null) {
-                        startForeground(notificationId, buildRoomPresenceNotification())
-                    } else {
-                        stopForegroundAndSelf()
+                if (state.sessionState == SessionState.SUCCESS) {
+                    if (!isTimerCompletedHandled) {
+                        isTimerCompletedHandled = true
+                        cancelAlarm()
+                        playSound(state.currentFinishSound)
+                        notificationManager.notify(finishedNotificationId, buildFinishedNotification())
+                        stopDeepModeWatcher()
+                        releaseWakeLock()
+
+                        // Mark room completed in background if we are the Host
+                        val roomId = timerManager.getActiveRoomId()
+                        if (roomId != null) {
+                            val uid = FirebaseModule.auth.currentUser?.uid
+                            if (uid != null) {
+                                try {
+                                    val room = teamRoomRepository.getRoom(roomId)
+                                    if (room != null && room.hostId == uid) {
+                                        Log.d(TAG, "Host timer finished in background: marking room completed")
+                                        teamRoomRepository.markRoomCompleted(roomId, User(uid = uid))
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "Failed to mark room completed in background", e)
+                                }
+                            }
+                        }
+
+                        if (timerManager.getActiveRoomId() != null) {
+                            startForeground(notificationId, buildRoomPresenceNotification())
+                        } else {
+                            stopForegroundAndSelf()
+                        }
                     }
                 }
             }
         }
+    }
+
+    private fun acquireWakeLock() {
+        if (wakeLock == null) {
+            val pm = getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
+            wakeLock = pm.newWakeLock(
+                android.os.PowerManager.PARTIAL_WAKE_LOCK,
+                "GreenFocus::TimerWakeLock"
+            ).apply {
+                acquire(3600 * 1000L) // 1 hour safety timeout
+            }
+            Log.d(TAG, "WakeLock acquired")
+        }
+    }
+
+    private fun releaseWakeLock() {
+        wakeLock?.let {
+            if (it.isHeld) {
+                it.release()
+                Log.d(TAG, "WakeLock released")
+            }
+        }
+        wakeLock = null
     }
 
     private suspend fun cleanupRoomStateAfterTaskRemoved(wasFocusing: Boolean) {
@@ -480,12 +582,78 @@ class TimerForegroundService : LifecycleService() {
         Log.d(TAG, "clearStoredRoomId")
     }
 
+    private fun getAlarmPendingIntent(): PendingIntent {
+        val intent = Intent(this, TimerForegroundService::class.java).apply {
+            action = ACTION_FINISH_ALARM
+        }
+        return PendingIntent.getService(
+            this,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    private fun scheduleAlarm(triggerTimeMillis: Long) {
+        val intent = getAlarmPendingIntent()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (alarmManager.canScheduleExactAlarms()) {
+                try {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerTimeMillis,
+                        intent
+                    )
+                    Log.d(TAG, "scheduleAlarm: setExactAndAllowWhileIdle scheduled at $triggerTimeMillis")
+                } catch (e: SecurityException) {
+                    Log.w(TAG, "scheduleAlarm: security exception using setExactAndAllowWhileIdle, falling back", e)
+                    fallbackScheduleAlarm(triggerTimeMillis, intent)
+                }
+            } else {
+                Log.w(TAG, "scheduleAlarm: canScheduleExactAlarms is false, falling back")
+                fallbackScheduleAlarm(triggerTimeMillis, intent)
+            }
+        } else {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTimeMillis,
+                intent
+            )
+            Log.d(TAG, "scheduleAlarm: setExactAndAllowWhileIdle scheduled at $triggerTimeMillis")
+        }
+    }
+
+    private fun fallbackScheduleAlarm(triggerTimeMillis: Long, intent: PendingIntent) {
+        try {
+            val info = AlarmManager.AlarmClockInfo(triggerTimeMillis, null)
+            alarmManager.setAlarmClock(info, intent)
+            Log.d(TAG, "scheduleAlarm: setAlarmClock fallback scheduled at $triggerTimeMillis")
+        } catch (e: Exception) {
+            Log.e(TAG, "scheduleAlarm: fallback failed, using inexact alarm", e)
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTimeMillis,
+                intent
+            )
+        }
+    }
+
+    private fun cancelAlarm() {
+        try {
+            alarmManager.cancel(getAlarmPendingIntent())
+            Log.d(TAG, "Alarm cancelled")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to cancel alarm", e)
+        }
+    }
+
     companion object {
         const val ACTION_START = "com.example.greenfocus.action.START_TIMER"
         const val ACTION_STOP = "com.example.greenfocus.action.STOP_TIMER"
         const val ACTION_RESET = "com.example.greenfocus.action.RESET_TIMER"
         const val ACTION_WATCH_ROOM = "com.example.greenfocus.action.WATCH_ROOM"
         const val ACTION_CLEAR_ROOM = "com.example.greenfocus.action.CLEAR_ROOM"
+        const val ACTION_FINISH_ALARM = "com.example.greenfocus.action.FINISH_ALARM"
         const val EXTRA_ROOM_ID = "EXTRA_ROOM_ID"
         const val EXTRA_RESET_SECONDS = "RESET_SECONDS"
         private const val TAG = "TimerForegroundService"

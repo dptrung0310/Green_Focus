@@ -82,13 +82,14 @@ class TimerManager(
             false
         }
 
+        val endTimeMillis = System.currentTimeMillis() + (already.currentTime * 1000L)
         timerJob = scope.launch {
-            while (_timerState.value.currentTime > 0) {
-                delay(1000L)
-                _timerState.update { it.copy(currentTime = it.currentTime - 1) }
+            while (true) {
+                delay(500L)
+                val now = System.currentTimeMillis()
+                val remainingSeconds = ((endTimeMillis - now) / 1000L).toInt().coerceAtLeast(0)
+                _timerState.update { it.copy(currentTime = remainingSeconds) }
 
-                // Dùng <= thay vì == để không miss nếu tick bị delay trên máy thật
-                // halfFired đảm bảo chỉ trigger 1 lần duy nhất mỗi session
                 if (!halfFired) {
                     val s = _timerState.value
                     if (s.currentTime * 2 <= s.totalTime) {
@@ -96,6 +97,10 @@ class TimerManager(
                         _timerState.update { it.copy(sessionState = SessionState.HALF_DONE) }
                         _timerState.update { it.copy(sessionState = SessionState.RUNNING) }
                     }
+                }
+
+                if (remainingSeconds <= 0) {
+                    break
                 }
             }
             timerFinished(scope)
@@ -142,6 +147,9 @@ class TimerManager(
         _timerState.update { it.copy(currentTime = seconds, totalTime = seconds, sessionState = SessionState.INIT) }
     }
     fun timerFinished(scope: CoroutineScope) {
+        if (!_timerState.value.isTimerRunning) return
+        timerJob?.cancel()
+        timerJob = null
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.SUCCESS) }
         val groupRoomId = activeRoomId
         if (groupRoomId != null) {
@@ -179,6 +187,9 @@ class TimerManager(
     }
 
     fun timerCancelled() {
+        if (!_timerState.value.isTimerRunning) return
+        timerJob?.cancel()
+        timerJob = null
         _timerState.update { it.copy(isTimerRunning = false, currentTime = it.totalTime, sessionState = SessionState.FAILED) }
         val groupRoomId = activeRoomId
         if (groupRoomId == null) {

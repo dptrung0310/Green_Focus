@@ -1,6 +1,5 @@
 package com.example.greenfocus.ui.screen.social
 
-import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,8 +15,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
@@ -30,6 +31,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -58,53 +60,57 @@ fun FriendsScreen(
 ) {
     var showAddFriendDialog by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        Button(
-            onClick = { showAddFriendDialog = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "Thêm bạn bè",
-                color = Color.White,
-                )
-        }
-
-        Text(
-            text = "Bạn bè của bạn",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = Color.Black,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-
-        if (friends.isEmpty()) {
-            Box(
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        item {
+            Button(
+                onClick = { showAddFriendDialog = true },
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
+                shape = RoundedCornerShape(8.dp)
             ) {
+                Icon(Icons.Default.Add, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Chưa có bạn bè nào.\nHãy mời ai đó cùng phát triển.",
-                    textAlign = TextAlign.Center,
-                    color = Color.Gray,
-                    fontSize = 16.sp
+                    text = "Thêm bạn bè",
+                    color = Color.White
                 )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(friends) { friend ->
-                    FriendRow(friend)
+        }
+
+        item {
+            Text(
+                text = "Bạn bè của bạn",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Color.Black,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        if (friends.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Chưa có bạn bè nào.\nHãy mời ai đó cùng phát triển.",
+                        textAlign = TextAlign.Center,
+                        color = Color.Gray,
+                        fontSize = 16.sp
+                    )
                 }
+            }
+        } else {
+            items(friends, key = { it.uid }) { friend ->
+                FriendRow(friend)
             }
         }
     }
@@ -133,7 +139,9 @@ fun FriendRequestRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = request.fromAvatarUrl.ifEmpty { "https://ui-avatars.com/api/?name=${request.fromDisplayName}" },
+            model = request.fromAvatarUrl.ifEmpty {
+                "https://ui-avatars.com/api/?name=${request.fromDisplayName}"
+            },
             contentDescription = null,
             modifier = Modifier
                 .size(40.dp)
@@ -176,7 +184,8 @@ fun AddFriendDialog(
             Column(
                 modifier = Modifier
                     .padding(16.dp)
-                    .fillMaxWidth(),
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = "Thêm bạn bè", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -212,7 +221,9 @@ fun AddFriendDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             AsyncImage(
-                                model = user.avatarUrl.ifEmpty { "https://ui-avatars.com/api/?name=${user.displayName}" },
+                                model = user.avatarUrl.ifEmpty {
+                                    "https://ui-avatars.com/api/?name=${user.displayName}"
+                                },
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(56.dp)
@@ -266,7 +277,7 @@ fun AddFriendDialog(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                androidx.compose.material3.TextButton(
+                TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.End)
                 ) {
@@ -304,7 +315,9 @@ fun FriendRow(user: User) {
                 text = user.displayName.ifEmpty { "Không rõ" },
                 fontWeight = FontWeight.Medium,
                 color = Color.Black,
-                fontSize = 16.sp
+                fontSize = 16.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${user.totalTreesPlanted} cây",

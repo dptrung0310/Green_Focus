@@ -3,15 +3,31 @@ package com.example.greenfocus.ui.screen.forest
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,16 +35,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.greenfocus.R
 import com.example.greenfocus.data.model.FocusSession
 import com.example.greenfocus.data.model.TreeResourceMapper
 import java.text.SimpleDateFormat
-import java.util.*
-import com.example.greenfocus.R
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ForestScreen(
@@ -36,48 +54,58 @@ fun ForestScreen(
     onArForestNavigate: () -> Unit,
     forestViewModel: ForestViewModel = viewModel(factory = ForestViewModel.Factory)
 ) {
-    // 1. Safely collect the UI state from your ViewModel
     val uiState by forestViewModel.forestUiState.collectAsState()
-
     val screenBackgroundColor = Color(0xFFFAF7EC)
+    val filteredSessions = uiState.treeList.filter { session ->
+        when (uiState.currentFilter) {
+            ForestFilter.ALL -> true
+            ForestFilter.ALIVE -> session.status == "ALIVE"
+            ForestFilter.DEAD -> session.status == "DEAD" || session.status == "WITHERED"
+        }
+    }
 
-    Column(
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 96.dp),
         modifier = modifier
             .fillMaxSize()
-            .background(screenBackgroundColor)
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .background(screenBackgroundColor),
+        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // --- Header (Camera button removed) ---
-        Text(
-            text = "Khu rừng của tôi",
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color(0xFF266E46), // Dark Green
-            fontWeight = FontWeight.SemiBold
-        )
+        item(span = { GridItemSpan(maxLineSpan) }) {
+            Column {
+                Text(
+                    text = "Khu rừng của tôi",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = Color(0xFF266E46),
+                    fontWeight = FontWeight.SemiBold
+                )
 
-        Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-        // --- View in AR Banner ---
-        ArBanner(onClick = onArForestNavigate)
+                ArBanner(onClick = onArForestNavigate)
 
-        Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-        // --- Segmented Filter Tabs ---
-        FilterTabs(
-            selectedFilter = uiState.currentFilter,
-            totalCount = uiState.currentTotalTree,
-            aliveCount = uiState.currentAliveTree,
-            deadCount = uiState.currentDeadTree,
-            onFilterSelected = { forestViewModel.setFilter(it) }
-        )
+                FilterTabs(
+                    selectedFilter = uiState.currentFilter,
+                    totalCount = uiState.currentTotalTree,
+                    aliveCount = uiState.currentAliveTree,
+                    deadCount = uiState.currentDeadTree,
+                    onFilterSelected = { forestViewModel.setFilter(it) }
+                )
+            }
+        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // --- The Lazy Grid ---
-        TreeGrid(
-            selectedFilter = uiState.currentFilter,
-            sessions = uiState.treeList // Passing the real list from your state
-        )
+        items(filteredSessions) { session ->
+            TreeCard(
+                treeId = session.treeId,
+                status = session.status,
+                duration = session.durationMinutes,
+                timestamp = session.startTime
+            )
+        }
     }
 }
 
@@ -89,7 +117,7 @@ fun ArBanner(onClick: () -> Unit) {
             .shadow(elevation = 4.dp, shape = RoundedCornerShape(16.dp))
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .background(Color(0xFF388E3C)) // Medium Green
+            .background(Color(0xFF388E3C))
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -185,26 +213,24 @@ fun FilterTabItem(
             fontSize = 12.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
             maxLines = 1,
-            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
 
-
 @Composable
 fun TreeGrid(selectedFilter: ForestFilter, sessions: List<FocusSession>) {
-    // 1. Filter the real FocusSession list based on the selected tab
     val filteredSessions = sessions.filter { session ->
         when (selectedFilter) {
             ForestFilter.ALL -> true
             ForestFilter.ALIVE -> session.status == "ALIVE"
-            ForestFilter.DEAD -> session.status == "DEAD" || session.status == "WITHERED" // Catching both just in case!
+            ForestFilter.DEAD -> session.status == "DEAD" || session.status == "WITHERED"
         }
     }
 
-    // 2. Render the grid
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+        columns = GridCells.Adaptive(minSize = 96.dp),
+        modifier = Modifier.fillMaxSize(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -230,8 +256,6 @@ fun TreeCard(
     val treeImage = TreeResourceMapper.getDrawableResId(treeId)
     val backgroundColor = if (isAlive) Color(0xFF98D19F) else Color(0xFFB3BAC4)
     val textColor = if (isAlive) Color(0xFF266E46) else Color(0xFF4B5563)
-
-    // Formats the Unix Long into a clean "Apr 6" string
     val dateString = SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestamp))
 
     Column(
@@ -244,13 +268,14 @@ fun TreeCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Emoji placeholders for the tree models
         Image(
-            painter = painterResource(if (isAlive) {
-                treeImage
-            } else {
-                R.drawable.dead_tree
-            }),
+            painter = painterResource(
+                if (isAlive) {
+                    treeImage
+                } else {
+                    R.drawable.dead_tree
+                }
+            ),
             contentDescription = "Tree",
             modifier = Modifier.size(50.dp),
             contentScale = ContentScale.Fit
@@ -262,7 +287,9 @@ fun TreeCard(
             text = stringResource(id = TreeResourceMapper.getNameResId(treeId)),
             color = textColor,
             fontWeight = FontWeight.Bold,
-            fontSize = 13.sp
+            fontSize = 13.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
 
         Spacer(modifier = Modifier.height(2.dp))
@@ -270,7 +297,9 @@ fun TreeCard(
         Text(
             text = "${duration} phút • ${dateString}",
             color = textColor.copy(alpha = 0.8f),
-            fontSize = 11.sp
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

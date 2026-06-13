@@ -73,7 +73,7 @@ fun FriendsScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32)),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = null)
+                Icon(Icons.Default.Add, contentDescription = null, tint = Color.White)
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = "Thêm bạn bè",

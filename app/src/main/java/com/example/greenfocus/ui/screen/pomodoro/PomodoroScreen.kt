@@ -734,6 +734,19 @@ private fun HomeRoomContent(
     var handledFocusLostEventId by remember(roomState.activeRoomId) { mutableStateOf<String?>(null) }
     var handledCompletedEventId by remember(roomState.activeRoomId) { mutableStateOf<String?>(null) }
     var completionArmedStartedAtMs by remember(roomState.activeRoomId) { mutableStateOf<Long?>(null) }
+    var localTimerStarted by remember(roomState.activeRoomId) { mutableStateOf(false) }
+
+    LaunchedEffect(pomodoroUiState.isTimerRunning) {
+        if (pomodoroUiState.isTimerRunning) {
+            localTimerStarted = true
+        }
+    }
+
+    LaunchedEffect(isStarted) {
+        if (isStarted) {
+            localTimerStarted = false
+        }
+    }
 
     val timerScale by animateFloatAsState(
         targetValue = if (pomodoroUiState.isTimerRunning) 1.25f else 1.0f,
@@ -799,6 +812,7 @@ private fun HomeRoomContent(
 
     LaunchedEffect(room?.status, room?.startedAt) {
         if (room != null && room.status == ROOM_STATUS_STARTED && room.startedAt != null) {
+            pomodoroViewModel.clearFinishedAndFailedStates()
             val startedAtMs = room.startedAt.toDate().time
             val elapsed = (System.currentTimeMillis() - startedAtMs).coerceAtLeast(0L)
             val remainingSeconds = (((room.durationMs - elapsed) / 1000L).toInt())
@@ -935,8 +949,8 @@ private fun HomeRoomContent(
         }
     }
 
-    LaunchedEffect(pomodoroUiState.isTimerFailed, isStarted) {
-        if (pomodoroUiState.isTimerFailed && isStarted) {
+    LaunchedEffect(pomodoroUiState.isTimerFailed, isStarted, localTimerStarted) {
+        if (pomodoroUiState.isTimerFailed && isStarted && localTimerStarted) {
             homeRoomViewModel.reportFocusLost()
             pomodoroViewModel.resetAfterSession(durationMinutes)
         }

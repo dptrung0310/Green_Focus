@@ -185,6 +185,16 @@ class PomodoroViewModel(
         updateSelectedTree(TreeType.DEFAULT)
         setTimerMinutes(25)
     }
+
+    fun clearFinishedAndFailedStates() {
+        _uiState.update {
+            it.copy(
+                isTimerFinished = false,
+                isTimerFailed = false,
+                isHalfDone = false
+            )
+        }
+    }
     fun setTimerSeconds(seconds: Int) {
         timerManager.setTimerSeconds(seconds)
     }
